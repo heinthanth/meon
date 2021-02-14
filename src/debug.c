@@ -29,7 +29,7 @@ static int simpleInstruction(const char *name, int offset)
 
 int disassembleInstruction(Chunk *chunk, int offset)
 {
-    printf("%04d ", offset);
+    printf("%04X ", offset);
     int line = getLine(chunk, offset);
     if (offset > 0 && line == getLine(chunk, offset - 1))
     {
@@ -43,10 +43,20 @@ int disassembleInstruction(Chunk *chunk, int offset)
     uint8_t instruction = chunk->code[offset];
     switch (instruction)
     {
-    case OP_RETURN:
-        return simpleInstruction("ret", offset);
     case OP_CONSTANT:
         return constantInstruction("const", chunk, offset);
+    case OP_ADD:
+        return simpleInstruction("add", offset);
+    case OP_SUBTRACT:
+        return simpleInstruction("sub", offset);
+    case OP_MULTIPLY:
+        return simpleInstruction("mul", offset);
+    case OP_DIVIDE:
+        return simpleInstruction("div", offset);
+    case OP_NEGATE:
+        return simpleInstruction("neg", offset);
+    case OP_RETURN:
+        return simpleInstruction("ret", offset);
     default:
         printf("Unknown OpCode %d\n", instruction);
         return offset + 1;
