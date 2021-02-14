@@ -248,10 +248,10 @@ Token scanToken()
         return makeToken(match('=') ? TOKEN_NOT_EQUAL : TOKEN_NOT);
     case '<':
     {
-        token_t t = TOKEN_LESSER;
+        token_t t = TOKEN_LESS;
         if (match('='))
         {
-            t = TOKEN_LESSER_EQUAL;
+            t = TOKEN_LESS_EQUAL;
         }
         else if (match('>'))
         {

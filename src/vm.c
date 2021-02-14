@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include "common.h"
 #include "debug.h"
@@ -53,6 +54,9 @@ static InterpretResult run()
         push(a op b);     \
     } while (false)
 
+    #ifdef DEBUG_TRACE_EXECUTION
+        printf("\n== %s ==\n", "execution trace");
+    #endif
     for (;;)
     {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -88,13 +92,33 @@ static InterpretResult run()
         case OP_DIVIDE:
             BINARY_OP(/);
             break;
+        case OP_MODULO:
+        {
+            do
+            {
+                double b = pop();
+                double a = pop();
+                push((int)a % (int)b);
+            } while (false);
+            break;
+        }
+        case OP_EXPONENT:
+        {
+            do
+            {
+                double b = pop();
+                double a = pop();
+                push(pow((int)a, (int)b));
+            } while (false);
+            break;
+        }
         case OP_NEGATE:
             push(-pop());
             break;
         case OP_RETURN:
         {
             printValue(pop());
-            printf("\n");
+            printf("\n\n");
             return INTERPRET_OK;
         }
         }
@@ -105,6 +129,19 @@ static InterpretResult run()
 
 InterpretResult interpret(const char *source)
 {
-    compile(source);
-    return INTERPRET_OK;
+    Chunk chunk;
+    initChunk(&chunk);
+
+    if (!compile(source, &chunk))
+    {
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    vm.chunk = &chunk;
+    vm.ip = vm.chunk->code;
+
+    InterpretResult result = run();
+    freeChunk(&chunk);
+    return result;
 }

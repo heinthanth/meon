@@ -5,7 +5,7 @@
 
 void disassembleChunk(Chunk *chunk, const char *name)
 {
-    printf("== %s ==\n", name);
+    printf("\n== %s ==\n\n", name);
     for (int offset = 0; offset < chunk->size;)
     {
         offset = disassembleInstruction(chunk, offset);
@@ -53,6 +53,10 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("mul", offset);
     case OP_DIVIDE:
         return simpleInstruction("div", offset);
+    case OP_MODULO:
+        return simpleInstruction("mod", offset);
+    case OP_EXPONENT:
+        return simpleInstruction("exp", offset);
     case OP_NEGATE:
         return simpleInstruction("neg", offset);
     case OP_RETURN:
