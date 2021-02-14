@@ -93,7 +93,7 @@ static void showInterpreterInfo(int exitStatus, bool shouldExit)
 {
 #define FD ((exitStatus) == 0 ? stdout : stderr)
     fprintf(FD, "\n");
-    fprintf(FD, GRN "MeON VM " RESET "version " YEL VM_VERSION RESET " ( built on: " __TIMESTAMP__ " )\n");
+    fprintf(FD, GRN "Meon VM " RESET "version " YEL VM_VERSION RESET " ( built on: " __TIMESTAMP__ " )\n");
     fprintf(FD, "(c) " YEL "2021 - present" RESET " Hein Thant Maung Maung. Licensed under " YEL "MIT.\n" RESET);
     fprintf(FD, "\n");
 #undef FD
@@ -111,8 +111,8 @@ static void showUsage(int exitStatus)
     fprintf(FD, YEL "COMMANDS:\n\n" RESET);
     fprintf(FD, GRN "    -h, --help" RESET "\t\tShow Usage information like this.\n");
     fprintf(FD, GRN "    -v, --version" RESET "\tShow VM version information.\n");
-    fprintf(FD, GRN "    -c, --compile" RESET "\tCompile MeON to native executable. (beta).\n");
-    fprintf(FD, GRN "    -r, --run" RESET "\t\tInterpret and evaluate MeON. (beta).\n");
+    fprintf(FD, GRN "    -c, --compile" RESET "\tCompile Meon to native executable. (beta).\n");
+    fprintf(FD, GRN "    -r, --run" RESET "\t\tInterpret and evaluate Meon. (beta).\n");
     fprintf(FD, "\n");
     fprintf(FD, YEL "EXAMPLES:\n\n" RESET);
     fprintf(FD, GRN "    meon -r hello.meon" RESET "\tInterpret and evaluate 'hello.meon'.\n");

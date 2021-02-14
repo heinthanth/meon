@@ -1,9 +1,9 @@
-# The MeON Interpreter
+# The Meon Interpreter
 
 [![MIT license](https://img.shields.io/badge/License-MIT-green.svg)](https://lbesson.mit-license.org/)
 ![Lines of code](https://img.shields.io/tokei/lines/github/heinthanth/meon?label=Line%20of%20Code)
 
-`MeON VM` is the Virtual Machine for `MeON` programming language which has some unique syntax and is designed for beginner in Programming. `MeON VM` can either interpret `MeON` or compile to native executable. It is distributed under [MIT License](LICENSE).
+`Meon VM` is the Virtual Machine for `Meon` programming language which has some unique syntax and is designed for beginner in Programming. `Meon VM` can either interpret `Meon` or compile to native executable. It is distributed under [MIT License](LICENSE).
 
 ## Documentations
 
@@ -33,12 +33,12 @@ build/meon --version
 
 ## Common Questions
 
-Here are some FAQ about `MeON` project.
+Here are some FAQ about `Meon` project.
 
--   WHY IT'S NAMED `MeON` ?
+-   WHY IT'S NAMED `Meon` ?
 
     -   it's from **Melon** and then, I removed **L**.
-    -   It's like `Neon`, `Xeon` and sounds sweet.
+    -   It's like `Neon`, `Xenon` and sounds sweet.
 
 -   WHY THE FU\*K I CREATED THIS ?
     -   No reason! I just want to learn something new by creating something new.
@@ -46,4 +46,4 @@ Here are some FAQ about `MeON` project.
 
 ## License
 
-The `MeON` Interpreter is licensed under MIT. See [LICENSE](LICENSE) for more details.
+The `Meon` Interpreter is licensed under MIT. See [LICENSE](LICENSE) for more details.
