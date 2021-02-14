@@ -3,7 +3,7 @@
 [![MIT license](https://img.shields.io/badge/License-MIT-green.svg)](https://lbesson.mit-license.org/)
 ![Lines of code](https://img.shields.io/tokei/lines/github/heinthanth/meon?label=Line%20of%20Code)
 
-`MeON` is the Virtual Machine for `MeON` programming language which has some unique syntax and is designed for beginner in Programming. `MeON VM` can either interpret `MeON` programming language and is distributed under [MIT License](LICENSE).
+`MeON VM` is the Virtual Machine for `MeON` programming language which has some unique syntax and is designed for beginner in Programming. `MeON VM` can either interpret `MeON` or compile to native executable. It is distributed under [MIT License](LICENSE).
 
 ## Documentations
 
