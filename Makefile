@@ -19,13 +19,13 @@ OBJECTS := $(addprefix $(BUILD_DIR)/objects/, $(notdir $(SOURCES:.c=.o)))
 default: clean $(BUILD_DIR)/$(NAME)
 
 $(BUILD_DIR)/$(NAME): $(OBJECTS)
-	@ printf "%8s %-40s %s\n" $(CC) $@ "-I $(HEADER_DIR) $(CFLAGS) $(LDFLAGS)"
+	@ printf "%8s %-16s %s\n" $(CC) $@ "-I $(HEADER_DIR) $(CFLAGS) $(LDFLAGS)"
 	@ mkdir -p $(BUILD_DIR)
 	@ $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 	@ rm -rf $(BUILD_DIR)/objects
 
 $(BUILD_DIR)/objects/%.o: $(SOURCE_DIR)/%.c $(HEADERS)
-	@ printf "%8s %-40s %s\n" $(CC) $< "-I $(HEADER_DIR) $(CFLAGS)"
+	@ printf "%8s %-16s %s\n" $(CC) $< "-I $(HEADER_DIR) $(CFLAGS)"
 	@ mkdir -p $(BUILD_DIR)/objects
 	@ $(CC) -c $(CFLAGS) -I $(HEADER_DIR) -o $@ $<
 

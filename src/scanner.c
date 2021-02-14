@@ -246,6 +246,8 @@ Token scanToken()
         return makeToken(TOKEN_SEMICOLON);
     case '!':
         return makeToken(match('=') ? TOKEN_NOT_EQUAL : TOKEN_NOT);
+    case '=':
+        return makeToken(match('=') ? TOKEN_EQUAL : TOKEN_ASSIGN);
     case '<':
     {
         token_t t = TOKEN_LESS;

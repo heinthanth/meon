@@ -30,5 +30,29 @@ void freeValueArr(ValueArr *arr)
 
 void printValue(Value value)
 {
-    printf("%g", value);
+    switch (value.t)
+    {
+    case VALUE_BOOLEAN:
+        printf(AS_BOOL(value) ? "true" : "false");
+        break;
+    case VALUE_NUMBER:
+        printf("%g", AS_NUMBER(value));
+        break;
+    }
+}
+
+bool valuesEqual(Value a, Value b)
+{
+    if (a.t != b.t)
+        return false;
+
+    switch (a.t)
+    {
+    case VALUE_BOOLEAN:
+        return AS_BOOL(a) == AS_BOOL(b);
+    case VALUE_NUMBER:
+        return AS_NUMBER(a) == AS_NUMBER(b);
+    default:
+        return false; // Unreachable.
+    }
 }

@@ -29,7 +29,7 @@ typedef enum
     PREC_FACTOR,     // / * %
     PREC_POWER,      // ^
     PREC_UNARY,      // - !
-    PREC_CALL,       // . ()
+    PREC_CALL,       // -> ()
     PREC_PRIMARY
 } Precedence;
 
@@ -167,6 +167,24 @@ static void binary()
     // Emit the operator instruction.
     switch (operator_t)
     {
+    case TOKEN_NOT_EQUAL:
+        emit_bs(OP_EQUAL, OP_NOT);
+        break;
+    case TOKEN_EQUAL:
+        emit_b(OP_EQUAL);
+        break;
+    case TOKEN_GREATER:
+        emit_b(OP_GREATER);
+        break;
+    case TOKEN_GREATER_EQUAL:
+        emit_b(OP_GREATER_EQUAL);
+        break;
+    case TOKEN_LESS:
+        emit_b(OP_LESS);
+        break;
+    case TOKEN_LESS_EQUAL:
+        emit_b(OP_LESS_EQUAL);
+        break;
     case TOKEN_PLUS:
         emit_b(OP_ADD);
         break;
@@ -186,6 +204,21 @@ static void binary()
     }
 }
 
+static void literal()
+{
+    switch (parser.previous.t)
+    {
+    case TOKEN_FALSE:
+        emit_b(OP_FALSE);
+        break;
+    case TOKEN_TRUE:
+        emit_b(OP_TRUE);
+        break;
+    default:
+        return; // Unreachable.
+    }
+}
+
 static void expression()
 {
     parsePrecedence(PREC_ASSIGNMENT);
@@ -200,7 +233,7 @@ static void grouping()
 static void number()
 {
     double value = strtod(parser.previous.start, NULL);
-    emitConstant(value);
+    emitConstant(NUMBER_VAL(value));
 }
 
 static void power()
@@ -219,6 +252,9 @@ static void unary()
     // Emit the operator instruction.
     switch (opearator_t)
     {
+    case TOKEN_NOT:
+        emit_b(OP_NOT);
+        break;
     case TOKEN_MINUS:
         emit_b(OP_NEGATE);
         break;
@@ -239,19 +275,19 @@ ParseRule rules[] = {
     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
     [TOKEN_PERCENT] = {NULL, binary, PREC_FACTOR},
     [TOKEN_CARET] = {unary, power, PREC_POWER},
-    [TOKEN_NOT] = {NULL, NULL, PREC_NONE},
-    [TOKEN_NOT_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_NOT] = {unary, NULL, PREC_NONE},
+    [TOKEN_NOT_EQUAL] = {NULL, binary, PREC_EQUALITY},
     [TOKEN_ASSIGN] = {NULL, NULL, PREC_NONE},
-    [TOKEN_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_GREATER_EQUAL] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS] = {NULL, NULL, PREC_NONE},
-    [TOKEN_LESS_EQUAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EQUAL] = {NULL, binary, PREC_EQUALITY},
+    [TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
+    [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
     [TOKEN_STRING_LITERAL] = {NULL, NULL, PREC_NONE},
     [TOKEN_NUMBER_LITERAL] = {number, NULL, PREC_NONE},
-    [TOKEN_FALSE] = {NULL, NULL, PREC_NONE},
-    [TOKEN_TRUE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
+    [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
 };
 

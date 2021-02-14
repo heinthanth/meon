@@ -45,6 +45,20 @@ int disassembleInstruction(Chunk *chunk, int offset)
     {
     case OP_CONSTANT:
         return constantInstruction("const", chunk, offset);
+    case OP_TRUE:
+        return simpleInstruction("true", offset);
+    case OP_FALSE:
+        return simpleInstruction("false", offset);
+    case OP_EQUAL:
+        return simpleInstruction("eq", offset);
+    case OP_GREATER:
+        return simpleInstruction("gt", offset);
+    case OP_LESS:
+        return simpleInstruction("lt", offset);
+    case OP_GREATER_EQUAL:
+        return simpleInstruction("ge", offset);
+    case OP_LESS_EQUAL:
+        return simpleInstruction("le", offset);
     case OP_ADD:
         return simpleInstruction("add", offset);
     case OP_SUBTRACT:
@@ -57,6 +71,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("mod", offset);
     case OP_EXPONENT:
         return simpleInstruction("exp", offset);
+    case OP_NOT:
+        return simpleInstruction("not", offset);
     case OP_NEGATE:
         return simpleInstruction("neg", offset);
     case OP_RETURN:
