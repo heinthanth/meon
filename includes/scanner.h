@@ -41,6 +41,7 @@ typedef struct
   const char *start;
   int length;
   int line;
+  int sourceIndex;
 } Token;
 
 void initScanner(const char *source);

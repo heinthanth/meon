@@ -11,6 +11,7 @@
 
 typedef struct
 {
+    const char *source;
     Token current;
     Token previous;
     bool hadError;
@@ -55,6 +56,9 @@ static void errorAt(Token *token, const char *message)
     if (parser.panicMode)
         return;
     parser.panicMode = true;
+
+    //fprintf(stderr, "%.*s\n", token->lexemeLength, token->lexeme);
+    fprintf(stderr, "point to [%d, %d]\n", token->line, token->sourceIndex);
 
     fprintf(stderr, "[line %d] Error", token->line);
     if (token->t == TOKEN_EOF)
@@ -319,8 +323,27 @@ static ParseRule *getRule(token_t t)
 bool compile(const char *source, Chunk *chunk)
 {
     initScanner(source);
+    // int line = -1;
+    // for (;;)
+    // {
+    //     Token token = scanToken();
+    //     if (token.line != line)
+    //     {
+    //         printf("%4d ", token.line);
+    //         line = token.line;
+    //     }
+    //     else
+    //     {
+    //         printf("   | ");
+    //     }
+    //     printf("%2d '%.*s'\n", token.t, token.length, token.start);
+
+    //     if (token.t == TOKEN_EOF)
+    //         break;
+    // }
     compilingChunk = chunk;
 
+    parser.source = source;
     parser.hadError = false;
     parser.panicMode = false;
 

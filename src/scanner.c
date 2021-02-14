@@ -9,6 +9,7 @@ typedef struct
     const char *start;
     const char *current;
     int line;
+    int sourceIndex;
 } Scanner;
 
 Scanner scanner;
@@ -18,6 +19,7 @@ void initScanner(const char *source)
     scanner.start = source;
     scanner.current = source;
     scanner.line = 1;
+    scanner.sourceIndex = -1;
 }
 
 static bool isEOF()
@@ -28,6 +30,7 @@ static bool isEOF()
 static char advance()
 {
     scanner.current++;
+    scanner.sourceIndex++;
     return scanner.current[-1];
 }
 
@@ -60,6 +63,7 @@ static Token makeToken(token_t t)
     token.start = scanner.start;
     token.length = (int)(scanner.current - scanner.start);
     token.line = scanner.line;
+    token.sourceIndex = scanner.sourceIndex;
     return token;
 }
 
@@ -70,6 +74,7 @@ static Token errorToken(const char *message)
     token.start = message;
     token.length = (int)strlen(message);
     token.line = scanner.line;
+    token.sourceIndex = scanner.sourceIndex;
     return token;
 }
 
@@ -78,6 +83,7 @@ static void skipWhitespace()
     for (;;)
     {
         char c = peek();
+        //printf("skip => %d, sourceIndex => %d\n", (int)c, scanner.sourceIndex);
         switch (c)
         {
         case ' ':
@@ -86,9 +92,12 @@ static void skipWhitespace()
             advance();
             break;
         case '\n':
+        {
             scanner.line++;
+            scanner.sourceIndex = -1;
             advance();
             break;
+        }
         case '/':
             if (peekNext() == '/')
             {
@@ -192,7 +201,10 @@ static Token makeString()
     while (peek() != '"' && !isEOF())
     {
         if (peek() == '\n')
+        {
+            scanner.sourceIndex = -1;
             scanner.line++;
+        }
         advance();
     }
 
