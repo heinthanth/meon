@@ -11,6 +11,8 @@ typedef struct
     Value *stack;
     int stackSize;
     int stackMaxSize;
+
+    Object *objects;
 } VM;
 
 typedef enum
@@ -19,6 +21,8 @@ typedef enum
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR
 } InterpretResult;
+
+extern VM vm;
 
 void initVM();
 void freeVM();

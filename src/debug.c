@@ -61,6 +61,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("le", offset);
     case OP_ADD:
         return simpleInstruction("add", offset);
+    case OP_CONCAT:
+        return simpleInstruction("concat", offset);
     case OP_SUBTRACT:
         return simpleInstruction("sub", offset);
     case OP_MULTIPLY:

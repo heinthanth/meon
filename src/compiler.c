@@ -192,6 +192,9 @@ static void binary()
     case TOKEN_PLUS:
         emit_b(OP_ADD);
         break;
+    case TOKEN_DOT:
+        emit_b(OP_CONCAT);
+        break;
     case TOKEN_MINUS:
         emit_b(OP_SUBTRACT);
         break;
@@ -240,6 +243,11 @@ static void number()
     emitConstant(NUMBER_VAL(value));
 }
 
+static void string()
+{
+    emitConstant(OBJ_VAL(cpString(parser.previous.start + 1, parser.previous.length - 2)));
+}
+
 static void power()
 {
     parsePrecedence(PREC_POWER);
@@ -271,7 +279,7 @@ ParseRule rules[] = {
     [TOKEN_LPAREN] = {grouping, NULL, PREC_NONE},
     [TOKEN_RPAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
-    [TOKEN_DOT] = {NULL, NULL, PREC_NONE},
+    [TOKEN_DOT] = {NULL, binary, PREC_TERM},
     [TOKEN_MINUS] = {unary, binary, PREC_TERM},
     [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
     [TOKEN_SEMICOLON] = {NULL, NULL, PREC_NONE},
@@ -288,7 +296,7 @@ ParseRule rules[] = {
     [TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
-    [TOKEN_STRING_LITERAL] = {NULL, NULL, PREC_NONE},
+    [TOKEN_STRING_LITERAL] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER_LITERAL] = {number, NULL, PREC_NONE},
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},

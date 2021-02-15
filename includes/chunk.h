@@ -15,6 +15,7 @@ typedef enum
     OP_LESS,
     OP_LESS_EQUAL,
     OP_ADD,
+    OP_CONCAT,
     OP_SUBTRACT,
     OP_MULTIPLY,
     OP_DIVIDE,
