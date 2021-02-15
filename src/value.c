@@ -38,12 +38,41 @@ void printValue(Value value)
         printf(AS_BOOL(value) ? "true" : "false");
         break;
     case VALUE_NUMBER:
+    {
         printf("%g", AS_NUMBER(value));
         break;
+    }
     case VALUE_OBJECT:
         printObject(value);
         break;
     }
+}
+
+char *value2string(Value value)
+{
+    if (IS_BOOL(value))
+    {
+        char *str = AS_BOOL(value) ? "true" : "false";
+        char *boolString = malloc(sizeof(char) * (strlen(str) + 1));
+        snprintf(boolString, strlen(str) + 1, "%s", str);
+        return boolString;
+    }
+    else if (IS_NUMBER(value))
+    {
+        double number = AS_NUMBER(value);
+        int numberStringLength = snprintf(NULL, 0, "%.15g", number) + 1;
+        char *numberString = malloc(sizeof(char) * numberStringLength);
+        snprintf(numberString, numberStringLength, "%.15g", number);
+        return numberString;
+    }
+    else if (IS_OBJ(value))
+    {
+        return object2string(value);
+    }
+
+    char *unknown = malloc(sizeof(char) * 8);
+    snprintf(unknown, 8, "%s", "unknown");
+    return unknown;
 }
 
 bool valuesEqual(Value a, Value b)

@@ -50,3 +50,20 @@ ObjectString *takeString(char *chars, int length)
 {
     return allocateString(chars, length);
 }
+
+char *object2string(Value value)
+{
+    switch (OBJ_TYPE(value))
+    {
+    case OBJECT_STRING:
+    {
+        ObjectString *stringObj = AS_STRING(value);
+        char *string = malloc(sizeof(char) * stringObj->length + 3);
+        snprintf(string, stringObj->length + 3, "%s", stringObj->chars);
+        return string;
+    }
+    }
+    char *unknown = malloc(sizeof(char) * 9);
+    snprintf(unknown, 8, "%s", "unknown");
+    return unknown;
+}

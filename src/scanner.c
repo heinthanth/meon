@@ -199,7 +199,7 @@ static Token makeNumber()
 
 static Token makeString()
 {
-#define CONCAT_STRING(pointer, c, length)                            \
+#define CONCAT_STRING(pointer, c, length)                    \
     pointer = GROW_ARRAY(char, pointer, length, length + 1); \
     str[length++] = c;
 
@@ -257,10 +257,9 @@ static Token makeString()
 
     // The closing quote.
     advance();
-    str = GROW_ARRAY(char, str, strLength, strLength + 1);
-    str[strLength++] = '"';
+    CONCAT_STRING(str, '"', strLength);
 
-    strLength = (int)strlen(str);
+    printf("strLength %d\n", strLength);
 
     Token token;
     token.t = TOKEN_STRING_LITERAL;
@@ -268,6 +267,7 @@ static Token makeString()
     token.start = str;
     token.length = strLength;
     FREE_ARRAY(char, str, strLength);
+
     token.line = scanner.line;
     token.sourceIndex = scanner.sourceIndex;
 

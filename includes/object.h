@@ -19,7 +19,7 @@ typedef enum
 struct Object
 {
     object_t t;
-    struct Object* next;
+    struct Object *next;
 };
 
 struct ObjectString
@@ -38,5 +38,6 @@ static inline bool check_object_t(Value value, object_t t)
 }
 
 void printObject(Value value);
+char *object2string(Value value);
 
 #endif

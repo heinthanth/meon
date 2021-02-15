@@ -75,15 +75,15 @@ static bool isFalse(Value value)
 
 static void concatenate()
 {
-    ObjectString *b = AS_STRING(pop());
-    ObjectString *a = AS_STRING(pop());
+    char *b = value2string(pop());
+    char *a = value2string(pop());
 
-    int length = a->length + b->length;
+    int length = (int)(strlen(a) + strlen(b));
     char *chars = ALLOCATE(char, length + 1);
-    memcpy(chars, a->chars, a->length);
-    memcpy(chars + a->length, b->chars, b->length);
-    chars[length] = '\0';
+    memcpy(chars, a, strlen(a));
+    memcpy(chars + strlen(a), b, strlen(b));
 
+    chars[length] = '\0';
     ObjectString *result = takeString(chars, length);
     push(OBJ_VAL(result));
 }
@@ -161,18 +161,8 @@ static InterpretResult run()
             BINARY_OP(NUMBER_VAL, +);
             break;
         case OP_CONCAT:
-        {
-            if (IS_STRING(peek(0)) && IS_STRING(peek(1)))
-            {
-                concatenate();
-            }
-            else
-            {
-                runtimeError("Operands must be strings.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
+            concatenate();
             break;
-        }
         case OP_SUBTRACT:
             BINARY_OP(NUMBER_VAL, -);
             break;

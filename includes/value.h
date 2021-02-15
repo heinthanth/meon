@@ -1,6 +1,8 @@
 #ifndef meon_value_h
 #define meon_value_h
 
+#include <stdlib.h>
+
 #include "common.h"
 
 typedef struct Object Object;
@@ -47,6 +49,7 @@ void initValueArr(ValueArr *arr);
 void writeValueArr(ValueArr *arr, Value value);
 void freeValueArr(ValueArr *arr);
 void printValue(Value value);
+char *value2string(Value value);
 bool valuesEqual(Value a, Value b);
 
 #endif
