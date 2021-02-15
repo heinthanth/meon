@@ -13,6 +13,7 @@ typedef enum
     VALUE_BOOLEAN,
     VALUE_NUMBER,
     VALUE_OBJECT,
+    VALUE_NULL,
 } value_t;
 
 typedef struct
@@ -28,6 +29,7 @@ typedef struct
 
 #define IS_BOOL(value) ((value).t == VALUE_BOOLEAN)
 #define IS_NUMBER(value) ((value).t == VALUE_NUMBER)
+#define IS_NULL(value)     ((value).t == VALUE_NULL)
 #define IS_OBJ(value) ((value).t == VALUE_OBJECT)
 
 #define AS_BOOL(value) ((value).as.boolean)
@@ -37,6 +39,7 @@ typedef struct
 #define BOOL_VAL(value) ((Value){VALUE_BOOLEAN, {.boolean = value}})
 #define NUMBER_VAL(value) ((Value){VALUE_NUMBER, {.number = value}})
 #define OBJ_VAL(obj)   ((Value){VALUE_OBJECT, {.object = (Object*)obj}})
+#define NULL_VAL           ((Value){VALUE_NULL, {.number = 0}})
 
 typedef struct
 {

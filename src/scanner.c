@@ -267,6 +267,7 @@ static Token makeString()
     token.start = str;
     token.length = strLength;
     FREE_ARRAY(char, str, strLength);
+    str = NULL;
 
     token.line = scanner.line;
     token.sourceIndex = scanner.sourceIndex;

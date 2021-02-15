@@ -34,6 +34,9 @@ void printValue(Value value)
 {
     switch (value.t)
     {
+    case VALUE_NULL:
+        printf("null");
+        break;
     case VALUE_BOOLEAN:
         printf(AS_BOOL(value) ? "true" : "false");
         break;
@@ -88,10 +91,7 @@ bool valuesEqual(Value a, Value b)
         return AS_NUMBER(a) == AS_NUMBER(b);
     case VALUE_OBJECT:
     {
-        ObjectString *aString = AS_STRING(a);
-        ObjectString *bString = AS_STRING(b);
-        return aString->length == bString->length &&
-               memcmp(aString->chars, bString->chars, aString->length) == 0;
+        return AS_OBJ(a) == AS_OBJ(b);
     default:
         return false; // Unreachable.
     }
