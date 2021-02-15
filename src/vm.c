@@ -225,12 +225,12 @@ static InterpretResult run()
 #undef READ_CONSTANT
 }
 
-InterpretResult interpret(const char *source)
+InterpretResult interpret(const char *source, const char *filename)
 {
     Chunk chunk;
     initChunk(&chunk);
 
-    if (!compile(source, &chunk))
+    if (!compile(source, filename, &chunk))
     {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;

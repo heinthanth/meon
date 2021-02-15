@@ -42,7 +42,7 @@ static void runFromREPL()
             continue;
         }
         add_history(code);
-        interpret(code);
+        interpret(code, "REPL");
     }
 }
 
@@ -80,7 +80,7 @@ static char *readFile(const char *path)
 static void runFromFile(const char *path)
 {
     char *source = readFile(path);
-    InterpretResult result = interpret(source);
+    InterpretResult result = interpret(source, path);
     free(source);
 
     if (result == INTERPRET_COMPILE_ERROR)

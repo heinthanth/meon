@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "ansi-color.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -12,6 +14,7 @@
 typedef struct
 {
     const char *source;
+    const char *filename;
     Token current;
     Token previous;
     bool hadError;
@@ -51,30 +54,31 @@ static Chunk *currentChunk()
     return compilingChunk;
 }
 
+static char *getSourceLine(int line)
+{
+    char *s = strdup(parser.source);
+    char *found;
+    int index = 0;
+    while ((found = strsep(&s, "\n")) != NULL)
+    {
+        if (index == line)
+            return found;
+        index++;
+    }
+    return "\0";
+}
+
 static void errorAt(Token *token, const char *message)
 {
     if (parser.panicMode)
         return;
     parser.panicMode = true;
 
-    //fprintf(stderr, "%.*s\n", token->lexemeLength, token->lexeme);
-    fprintf(stderr, "point to [%d, %d]\n", token->line, token->sourceIndex);
-
-    fprintf(stderr, "[line %d] Error", token->line);
-    if (token->t == TOKEN_EOF)
-    {
-        fprintf(stderr, " at end");
-    }
-    else if (token->t == TOKEN_ERR)
-    {
-        // Nothing.
-    }
-    else
-    {
-        fprintf(stderr, " at '%.*s'", token->length, token->start);
-    }
-
-    fprintf(stderr, ": %s\n", message);
+    fprintf(stderr, YEL "\nERROR:" RESET RED " %s\n\n" RESET, message);
+    fprintf(stderr, YEL_UN "in " YEL_HB "%s\n\n" RESET, parser.filename);
+    fprintf(stderr, YEL "%4d |" RESET " %s\n", token->line, getSourceLine(token->line - 1));
+    fprintf(stderr, "       %*s", token->sourceIndex, "");
+    fprintf(stderr, RED "^ found ERROR around here.\n\n" RESET);
     parser.hadError = true;
 }
 
@@ -328,7 +332,7 @@ static ParseRule *getRule(token_t t)
     return &rules[t];
 }
 
-bool compile(const char *source, Chunk *chunk)
+bool compile(const char *source, const char *filename, Chunk *chunk)
 {
     initScanner(source);
     // int line = -1;
@@ -352,6 +356,7 @@ bool compile(const char *source, Chunk *chunk)
     compilingChunk = chunk;
 
     parser.source = source;
+    parser.filename = filename;
     parser.hadError = false;
     parser.panicMode = false;
 
