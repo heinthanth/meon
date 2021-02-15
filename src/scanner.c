@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "scanner.h"
+#include "mem.h"
 
 typedef struct
 {
@@ -198,22 +199,80 @@ static Token makeNumber()
 
 static Token makeString()
 {
-    while (peek() != '"' && !isEOF())
+#define CONCAT_STRING(pointer, c, length)                            \
+    pointer = GROW_ARRAY(char, pointer, length, length + 1); \
+    str[length++] = c;
+
+    char *str = NULL;
+    int strLength = 0;
+    bool shouldEscape = false;
+
+    // opening quote
+    CONCAT_STRING(str, '"', strLength);
+
+    while ((peek() != '"' || shouldEscape) && !isEOF() && !(peek() == '\n'))
     {
-        if (peek() == '\n')
+        if (shouldEscape)
         {
-            scanner.sourceIndex = -1;
-            scanner.line++;
+            char c = peek();
+            switch (c)
+            {
+            case 'n':
+            {
+                CONCAT_STRING(str, '\n', strLength);
+                shouldEscape = false;
+                break;
+            }
+            case 't':
+            {
+                CONCAT_STRING(str, '\t', strLength);
+                shouldEscape = false;
+                break;
+            }
+            default:
+            {
+                CONCAT_STRING(str, '\\', strLength);
+                CONCAT_STRING(str, peek(), strLength);
+                shouldEscape = false;
+                break;
+            }
+            }
+        }
+        else
+        {
+            if (peek() == '\\')
+            {
+                shouldEscape = true;
+            }
+            else
+            {
+                CONCAT_STRING(str, peek(), strLength);
+            }
         }
         advance();
     }
 
-    if (isEOF())
+    if (isEOF() || peek() == '\n')
         return errorToken("Unterminated string.");
 
     // The closing quote.
     advance();
-    return makeToken(TOKEN_STRING_LITERAL);
+    str = GROW_ARRAY(char, str, strLength, strLength + 1);
+    str[strLength++] = '"';
+
+    strLength = (int)strlen(str);
+
+    Token token;
+    token.t = TOKEN_STRING_LITERAL;
+
+    token.start = str;
+    token.length = strLength;
+    FREE_ARRAY(char, str, strLength);
+    token.line = scanner.line;
+    token.sourceIndex = scanner.sourceIndex;
+
+    return token;
+#undef CONCAT_STRING
 }
 
 Token scanToken()

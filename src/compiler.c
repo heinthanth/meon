@@ -75,7 +75,7 @@ static void errorAt(Token *token, const char *message)
     parser.panicMode = true;
 
     fprintf(stderr, YEL "\nERROR:" RESET RED " %s\n\n" RESET, message);
-    fprintf(stderr, YEL_UN "in " YEL_HB "%s\n\n" RESET, parser.filename);
+    fprintf(stderr, YEL_UN YEL_HB "%s:\n\n" RESET, parser.filename);
     fprintf(stderr, YEL "%4d |" RESET " %s\n", token->line, getSourceLine(token->line - 1));
     fprintf(stderr, "       %*s", token->sourceIndex, "");
     fprintf(stderr, RED "^ found ERROR around here.\n\n" RESET);
