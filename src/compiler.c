@@ -155,6 +155,26 @@ static void emit_bs(uint8_t a, uint8_t b)
     emit_b(b);
 }
 
+static int emitJump(uint8_t instruction)
+{
+    emit_b(instruction);
+    emit_b(0xff);
+    emit_b(0xff);
+    return currentChunk()->size - 2;
+}
+
+static void patchJump(int offset)
+{
+    // -2 to adjust for the bytecode for the jump offset itself.
+    int jump = currentChunk()->size - offset - 2;
+    if (jump > UINT16_MAX)
+    {
+        error("Too much code to jump over.");
+    }
+    currentChunk()->code[offset] = (jump >> 8) & 0xff;
+    currentChunk()->code[offset + 1] = jump & 0xff;
+}
+
 static void emitReturn()
 {
     emit_b(OP_RETURN);
@@ -445,6 +465,65 @@ static void expressionStatement()
     emit_b(OP_POP);
 }
 
+static void ifStatement()
+{
+    expect(TOKEN_LPAREN, "Expect '(' after 'if'.");
+    expression();
+    expect(TOKEN_RPAREN, "Expect ')' after condition.");
+
+    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emit_b(OP_POP);
+
+    if (match(TOKEN_THEN))
+    {
+        statement();
+    }
+    else
+    {
+        while (!(check(TOKEN_ENDIF) || check(TOKEN_ELSEIF) || check(TOKEN_ELSE)) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+    }
+
+    while (match(TOKEN_ELSEIF))
+    {
+        int jmp = emitJump(OP_JUMP);
+        patchJump(thenJump);
+        emit_b(OP_POP);
+
+        expect(TOKEN_LPAREN, "Expect '(' after 'if'.");
+        expression();
+        expect(TOKEN_RPAREN, "Expect ')' after condition.");
+
+        thenJump = emitJump(OP_JUMP_IF_FALSE);
+        emit_b(OP_POP);
+
+        while (!(check(TOKEN_ENDIF) || check(TOKEN_ELSE) || check(TOKEN_ELSEIF)) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+        patchJump(jmp);
+        emit_b(OP_POP);
+    }
+
+    int elseJump = emitJump(OP_JUMP);
+    patchJump(thenJump);
+    emit_b(OP_POP);
+
+    if (match(TOKEN_ELSE))
+    {
+
+        while (!check(TOKEN_ENDIF) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+    }
+    expect(TOKEN_ENDIF, "Expect 'endif' after 'if' statement.");
+    patchJump(elseJump);
+    emit_b(OP_POP);
+}
+
 static void printStatement()
 {
     expression();
@@ -500,6 +579,10 @@ static void statement()
         beginScope();
         block(TOKEN_ENDBLOCK);
         endScope();
+    }
+    else if (match(TOKEN_IF))
+    {
+        ifStatement();
     }
     else
     {

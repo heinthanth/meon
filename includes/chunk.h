@@ -32,6 +32,8 @@ typedef enum
     OP_NOT,
     OP_NEGATE,
     OP_OUTPUT,
+    OP_JUMP_IF_FALSE,
+    OP_JUMP,
     OP_RETURN
 } OpCode;
 

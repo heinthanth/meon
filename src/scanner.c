@@ -152,10 +152,32 @@ static token_t detectIdentifier()
             switch (scanner.start[2])
             {
             case 'd':
-                return detectReservedWord(3, 5, "block", TOKEN_ENDBLOCK);
+            {
+                if (scanner.current - scanner.start > 3)
+                {
+                    switch (scanner.start[3])
+                    {
+                    case 'b':
+                        return detectReservedWord(4, 4, "lock", TOKEN_ENDBLOCK);
+                    case 'i':
+                        return detectReservedWord(4, 1, "f", TOKEN_ENDIF);
+                    }
+                }
             }
+            case 's':
+            {
+                if (scanner.current - scanner.start > 4)
+                {
+                    return detectReservedWord(4, 2, "if", TOKEN_ELSEIF);
+                }
+                else if (scanner.current - scanner.start > 3)
+                {
+                    return detectReservedWord(3, 1, "e", TOKEN_ELSE);
+                }
+            }
+            }
+            break;
         }
-        break;
     }
     case 'f':
     {
@@ -164,7 +186,21 @@ static token_t detectIdentifier()
             switch (scanner.start[1])
             {
             case 'a':
-                return detectReservedWord(2, 3, "lse", TOKEN_TRUE);
+                return detectReservedWord(2, 3, "lse", TOKEN_FALSE);
+            }
+        }
+        break;
+    }
+    case 'i':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'f':
+                return TOKEN_IF;
+            case 'o':
+                return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
             }
         }
         break;
@@ -391,7 +427,18 @@ Token scanToken()
     case '!':
         return makeToken(match('=') ? TOKEN_NOT_EQUAL : TOKEN_NOT);
     case '=':
-        return makeToken(match('=') ? TOKEN_EQUAL : TOKEN_ASSIGN);
+    {
+        token_t t = TOKEN_ASSIGN;
+        if (match('='))
+        {
+            t = TOKEN_EQUAL;
+        }
+        else if (match('>'))
+        {
+            t = TOKEN_THEN;
+        }
+        return makeToken(t);
+    }
     case '<':
     {
         token_t t = TOKEN_LESS;

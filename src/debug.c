@@ -36,9 +36,17 @@ static int bInstruction(const char *name, Chunk *chunk,
     return offset + 2;
 }
 
+static int jumpInstruction(const char *name, int sign, Chunk *chunk, int offset)
+{
+    uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
+    jump |= chunk->code[offset + 2];
+    printf("%-16s %04d -> %04d\n", name, offset, offset + 3 + sign * jump);
+    return offset + 3;
+}
+
 int disassembleInstruction(Chunk *chunk, int offset)
 {
-    printf("%04X ", offset);
+    printf("%04d ", offset);
     int line = getLine(chunk, offset);
     if (offset > 0 && line == getLine(chunk, offset - 1))
     {
@@ -104,6 +112,10 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("neg", offset);
     case OP_OUTPUT:
         return simpleInstruction("output", offset);
+    case OP_JUMP:
+        return jumpInstruction("jmp", 1, chunk, offset);
+    case OP_JUMP_IF_FALSE:
+        return jumpInstruction("jif", 1, chunk, offset);
     case OP_RETURN:
         return simpleInstruction("ret", offset);
     default:
