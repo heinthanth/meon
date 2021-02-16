@@ -5,6 +5,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "mem.h"
 #include "ansi-color.h"
 
 //#ifdef DEBUG_PRINT_CODE
@@ -467,6 +468,9 @@ static void expressionStatement()
 
 static void ifStatement()
 {
+    int *trueJump = NULL;
+    int trueJumpSize = 0;
+
     expect(TOKEN_LPAREN, "Expect '(' after 'if'.");
     expression();
     expect(TOKEN_RPAREN, "Expect ')' after condition.");
@@ -488,7 +492,9 @@ static void ifStatement()
 
     while (match(TOKEN_ELSEIF))
     {
-        int jmp = emitJump(OP_JUMP);
+        trueJump = GROW_ARRAY(int, trueJump, trueJumpSize, trueJumpSize + 1);
+        trueJump[trueJumpSize++] = emitJump(OP_JUMP);
+
         patchJump(thenJump);
         emit_b(OP_POP);
 
@@ -503,11 +509,10 @@ static void ifStatement()
         {
             declaration();
         }
-        patchJump(jmp);
-        emit_b(OP_POP);
     }
+    trueJump = GROW_ARRAY(int, trueJump, trueJumpSize, trueJumpSize + 1);
+    trueJump[trueJumpSize++] = emitJump(OP_JUMP);
 
-    int elseJump = emitJump(OP_JUMP);
     patchJump(thenJump);
     emit_b(OP_POP);
 
@@ -520,8 +525,14 @@ static void ifStatement()
         }
     }
     expect(TOKEN_ENDIF, "Expect 'endif' after 'if' statement.");
-    patchJump(elseJump);
-    emit_b(OP_POP);
+
+    for (int i = 0; i < trueJumpSize - 1; i++)
+    {
+        patchJump(trueJump[i]);
+        emit_b(OP_POP);
+    }
+    patchJump(trueJump[trueJumpSize - 1]);
+    FREE_ARRAY(int, trueJump, trueJumpSize);
 }
 
 static void printStatement()

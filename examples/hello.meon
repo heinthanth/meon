@@ -1,9 +1,13 @@
 if (false)
-    output "True?";
+    output "1st";
 elseif (false)
-    output "False?";
+    output "2nd";
 elseif (false)
-    output "HELLO";
+    output "3rd";
+elseif (false)
+    output "4th";
+else
+    output "else";
 endif
 
 output "Out of IF";
