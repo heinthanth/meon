@@ -46,7 +46,21 @@ typedef struct
     Precedence precedence;
 } ParseRule;
 
+typedef struct
+{
+    Token name;
+    int depth;
+} Local;
+
+typedef struct
+{
+    Local locals[UINT8_COUNT];
+    int localCount;
+    int scopeDepth;
+} Compiler;
+
 Parser parser;
+Compiler *current = NULL;
 
 Chunk *compilingChunk;
 
@@ -162,6 +176,13 @@ static void emitConstant(Value value)
     emit_bs(OP_CONSTANT, makeConstant(value));
 }
 
+static void initCompiler(Compiler *compiler)
+{
+    compiler->localCount = 0;
+    compiler->scopeDepth = 0;
+    current = compiler;
+}
+
 static void endCompiler()
 {
     emitReturn();
@@ -173,22 +194,26 @@ static void endCompiler()
 #endif
 }
 
+static void beginScope()
+{
+    current->scopeDepth++;
+}
+
+static void endScope()
+{
+    current->scopeDepth--;
+    while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth)
+    {
+        emit_b(OP_POP);
+        current->localCount--;
+    }
+}
+
 static void expression();
 static void statement();
 static void declaration();
 static ParseRule *getRule(token_t t);
 static void parsePrecedence(Precedence precedence);
-
-static uint8_t identifierConstant(Token *name)
-{
-    return makeConstant(OBJ_VAL(cpString(name->start, name->length)));
-}
-
-static uint8_t parseVariable(const char *errorMessage)
-{
-    expect(TOKEN_IDENTIFIER, errorMessage);
-    return identifierConstant(&parser.previous);
-}
 
 static token_t parse_variable_t(const char *errorMessage)
 {
@@ -205,8 +230,99 @@ static token_t parse_variable_t(const char *errorMessage)
     return t;
 }
 
-static void defineVariable(uint8_t global, token_t variable_t)
+static uint8_t identifierConstant(Token *name)
 {
+    return makeConstant(OBJ_VAL(cpString(name->start, name->length)));
+}
+
+static bool identifiersEqual(Token *a, Token *b)
+{
+    if (a->length != b->length)
+        return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static int resolveLocal(Compiler *compiler, Token *name)
+{
+    for (int i = compiler->localCount - 1; i >= 0; i--)
+    {
+        Local *local = &compiler->locals[i];
+        if (identifiersEqual(name, &local->name))
+        {
+            if (local->depth == -1)
+            {
+                error("Can't read local variable in its own initializer.");
+            }
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void addLocal(Token name)
+{
+    if (current->localCount == UINT8_COUNT)
+    {
+        error("Too many local variables in function.");
+        return;
+    }
+
+    Local *local = &current->locals[current->localCount++];
+    local->name = name;
+    local->depth = -1;
+}
+
+static void declareVariable(token_t variable_t)
+{
+    if (current->scopeDepth == 0)
+        return;
+
+    //token_t t = parse_variable_t("Expect variable type.");
+    Token *name = &parser.previous;
+
+    for (int i = current->localCount - 1; i >= 0; i--)
+    {
+        Local *local = &current->locals[i];
+        if (local->depth != -1 && local->depth < current->scopeDepth)
+        {
+            break;
+        }
+
+        if (identifiersEqual(name, &local->name))
+        {
+            error("Variable exists with this name in this scope.");
+        }
+    }
+    addLocal(*name);
+
+    //printf("\n\nGOT VARIABLE TYPE => %d\n\n", variable_t);
+}
+
+static uint8_t parseVariable(const char *errorMessage, token_t variable_t)
+{
+    expect(TOKEN_IDENTIFIER, errorMessage);
+
+    declareVariable(variable_t);
+    if (current->scopeDepth > 0)
+        return 0;
+
+    return identifierConstant(&parser.previous);
+}
+
+static void markInitialized()
+{
+    current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
+static void defineVariable(uint8_t global, token_t variable_t)
+//static void defineVariable(uint8_t global)
+{
+    if (current->scopeDepth > 0)
+    {
+        markInitialized();
+        emit_bs(OP_DEFINE_LOCAL, makeConstant(NUMBER_VAL(variable_t)));
+        return;
+    }
     emit_bs(OP_DEFINE_VAR_TYPE, makeConstant(NUMBER_VAL(variable_t)));
     emit_bs(OP_DEFINE_GLOBAL, global);
 }
@@ -283,10 +399,19 @@ static void expression()
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+static void block(token_t end)
+{
+    while (!check(end) && !check(TOKEN_EOF))
+    {
+        declaration();
+    }
+    expect(end, "Expect 'end' after block.");
+}
+
 static void varDeclaration()
 {
     token_t variable_t = parse_variable_t("Expect variable data type.");
-    uint8_t global = parseVariable("Expect variable name.");
+    uint8_t global = parseVariable("Expect variable name.", variable_t);
 
     if (match(TOKEN_ASSIGN))
     {
@@ -297,7 +422,7 @@ static void varDeclaration()
         switch (variable_t)
         {
         case TOKEN_VT_STRING:
-            emitConstant(OBJ_VAL(takeString("", 0)));
+            emitConstant(OBJ_VAL(cpString("", 0)));
             break;
         case TOKEN_VT_NUMBER:
             emitConstant(NUMBER_VAL(0.0));
@@ -370,6 +495,12 @@ static void statement()
     {
         printStatement();
     }
+    else if (match(TOKEN_BLOCK))
+    {
+        beginScope();
+        block(TOKEN_ENDBLOCK);
+        endScope();
+    }
     else
     {
         expressionStatement();
@@ -395,15 +526,28 @@ static void string(bool canAssign)
 
 static void namedVariable(Token name, bool canAssign)
 {
-    uint8_t arg = identifierConstant(&name);
-    if (canAssign && match(TOKEN_ASSIGN))
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(current, &name);
+    if (arg != -1)
     {
-        expression();
-        emit_bs(OP_SET_GLOBAL, arg);
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
     }
     else
     {
-        emit_bs(OP_GET_GLOBAL, arg);
+        arg = identifierConstant(&name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
+
+    if (canAssign && match(TOKEN_ASSIGN))
+    {
+        expression();
+        emit_bs(setOp, (uint8_t)arg);
+    }
+    else
+    {
+        emit_bs(getOp, (uint8_t)arg);
     }
 }
 
@@ -501,6 +645,8 @@ static ParseRule *getRule(token_t t)
 bool compile(const char *source, const char *filename, Chunk *chunk)
 {
     initScanner(source);
+    Compiler compiler;
+    initCompiler(&compiler);
     // int line = -1;
     // for (;;)
     // {

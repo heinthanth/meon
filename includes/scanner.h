@@ -37,6 +37,8 @@ typedef enum
 
   TOKEN_OUTPUT,
   TOKEN_LET,
+  TOKEN_BLOCK,
+  TOKEN_ENDBLOCK,
 
   TOKEN_EOF,
   TOKEN_ERR,

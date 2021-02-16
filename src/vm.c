@@ -154,6 +154,12 @@ static InterpretResult run()
         case OP_POP:
             pop();
             break;
+        case OP_GET_LOCAL:
+        {
+            uint8_t slot = READ_BYTE();
+            push(vm.stack[slot]);
+            break;
+        }
         case OP_GET_GLOBAL:
         {
             ObjectString *name = READ_STRING();
@@ -164,6 +170,19 @@ static InterpretResult run()
                 return INTERPRET_RUNTIME_ERROR;
             }
             push(value);
+            break;
+        }
+        case OP_DEFINE_LOCAL:
+        {
+            Value t = READ_CONSTANT();
+            if (
+                (t.as.number == 24 && !IS_STRING(peek(0))) ||
+                (t.as.number == 25 && !IS_NUMBER(peek(0))) ||
+                (t.as.number == 26 && !IS_BOOL(peek(0))))
+            {
+                runtimeError("Cannot assign value to variable with different type.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
             break;
         }
         case OP_DEFINE_GLOBAL:
@@ -179,7 +198,23 @@ static InterpretResult run()
                 runtimeError("Cannot assign value to variable with different type.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            tableSet(&vm.globals, name, peek(0));
+            tableSet(&vm.globals, name, value);
+            break;
+        }
+        case OP_SET_LOCAL:
+        {
+            uint8_t slot = READ_BYTE();
+            Value old = vm.stack[slot];
+            // printf("\n\nnew value => ");
+            // //printf("%d", peek(1).t);
+            // printValue(peek(2));
+            // printf("\n\n");
+            if (old.t != peek(2).t)
+            {
+                runtimeError("Cannot assign value to variable with different type.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            vm.stack[slot] = peek(2);
             break;
         }
         case OP_SET_GLOBAL:
@@ -201,7 +236,6 @@ static InterpretResult run()
             tableSet(&vm.globals, name, v);
             break;
         }
-
         case OP_EQUAL:
         {
             Value b = pop();
@@ -302,6 +336,7 @@ InterpretResult interpret(const char *source, const char *filename)
     vm.ip = vm.chunk->code;
 
     InterpretResult result = run();
+
     freeChunk(&chunk);
     return result;
 }

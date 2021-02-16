@@ -137,8 +137,22 @@ static token_t detectIdentifier()
         {
             switch (scanner.start[1])
             {
+            case 'l':
+                return detectReservedWord(2, 3, "ock", TOKEN_BLOCK);
             case 'o':
                 return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
+            }
+        }
+        break;
+    }
+    case 'e':
+    {
+        if (scanner.current - scanner.start > 2)
+        {
+            switch (scanner.start[2])
+            {
+            case 'd':
+                return detectReservedWord(3, 5, "block", TOKEN_ENDBLOCK);
             }
         }
         break;

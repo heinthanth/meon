@@ -1,9 +1,9 @@
-let number a = 3;
-let string b = "HELLO";
-let boolean c = true;
+block 
+    let number a = 1 + 2;
+    let number b = 4 + 6;
 
-output a . c;
+    output a + b;
+    a = 35;
 
-a = 1;
-
-output a;
+    output a;
+endblock
