@@ -94,7 +94,7 @@ static void concatenate()
     push(OBJ_VAL(result));
 }
 
-static InterpretResult run()
+static InterpretResult run(int debugLevel)
 {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
@@ -113,22 +113,26 @@ static InterpretResult run()
         push(t(a op b));                                \
     } while (false)
 
-#ifdef DEBUG_TRACE_EXECUTION
-    printf("\n== %s ==\n", "execution trace");
-#endif
+    //#ifdef DEBUG_TRACE_EXECUTION
+    if (debugLevel > 1)
+        printf("== %s ==\n", "execution trace");
+    //#endif
     for (;;)
     {
-#ifdef DEBUG_TRACE_EXECUTION
-        printf("          ");
-        for (int i = 0; i < vm.stackSize; i++)
+        //#ifdef DEBUG_TRACE_EXECUTION
+        if (debugLevel > 1)
         {
-            printf("[ ");
-            printValue(vm.stack[i]);
-            printf(" ]");
+            printf("          ");
+            for (int i = 0; i < vm.stackSize; i++)
+            {
+                printf("[ ");
+                printValue(vm.stack[i]);
+                printf(" ]");
+            }
+            printf("\n");
+            disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
         }
-        printf("\n");
-        disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
-#endif
+        //#endif
 
         uint8_t instruction;
         switch (instruction = READ_BYTE())
@@ -309,8 +313,10 @@ static InterpretResult run()
         }
         case OP_RETURN:
         {
-            // printValue(pop());
-            // printf("\n\n");
+            // #ifdef DEBUG_TRACE_EXECUTION
+            if (debugLevel > 1)
+                printf("\n");
+            //#endif
             return INTERPRET_OK;
         }
         }
@@ -321,12 +327,12 @@ static InterpretResult run()
 #undef BINARY_OP
 }
 
-InterpretResult interpret(const char *source, const char *filename)
+InterpretResult interpret(const char *source, const char *filename, int debugLevel)
 {
     Chunk chunk;
     initChunk(&chunk);
 
-    if (!compile(source, filename, &chunk))
+    if (!compile(source, filename, &chunk, debugLevel))
     {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
@@ -335,7 +341,7 @@ InterpretResult interpret(const char *source, const char *filename)
     vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
 
-    InterpretResult result = run();
+    InterpretResult result = run(debugLevel);
 
     freeChunk(&chunk);
     return result;

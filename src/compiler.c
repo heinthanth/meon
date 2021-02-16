@@ -7,9 +7,9 @@
 #include "scanner.h"
 #include "ansi-color.h"
 
-#ifdef DEBUG_PRINT_CODE
+//#ifdef DEBUG_PRINT_CODE
 #include "debug.h"
-#endif
+//#endif
 
 typedef struct
 {
@@ -183,15 +183,15 @@ static void initCompiler(Compiler *compiler)
     current = compiler;
 }
 
-static void endCompiler()
+static void endCompiler(int debugLevel)
 {
     emitReturn();
-#ifdef DEBUG_PRINT_CODE
-    if (!parser.hadError)
+    //#ifdef DEBUG_PRINT_CODE
+    if (!parser.hadError && debugLevel > 0)
     {
         disassembleChunk(currentChunk(), "disassmbler");
     }
-#endif
+    //#endif
 }
 
 static void beginScope()
@@ -642,7 +642,7 @@ static ParseRule *getRule(token_t t)
     return &rules[t];
 }
 
-bool compile(const char *source, const char *filename, Chunk *chunk)
+bool compile(const char *source, const char *filename, Chunk *chunk, int debugLevel)
 {
     initScanner(source);
     Compiler compiler;
@@ -678,6 +678,6 @@ bool compile(const char *source, const char *filename, Chunk *chunk)
         declaration();
     }
 
-    endCompiler();
+    endCompiler(debugLevel);
     return !parser.hadError;
 }

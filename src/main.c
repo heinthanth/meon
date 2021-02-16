@@ -42,7 +42,7 @@ static void runFromREPL()
             continue;
         }
         add_history(code);
-        interpret(code, "REPL");
+        interpret(code, "REPL", 0);
     }
 }
 
@@ -77,10 +77,10 @@ static char *readFile(const char *path)
     return buffer;
 }
 
-static void runFromFile(const char *path)
+static void runFromFile(const char *path, int debugLevel)
 {
     char *source = readFile(path);
-    InterpretResult result = interpret(source, path);
+    InterpretResult result = interpret(source, path, debugLevel);
     free(source);
 
     if (result == INTERPRET_COMPILE_ERROR)
@@ -107,16 +107,18 @@ static void showUsage(int exitStatus)
     showInterpreterInfo(exitStatus, false);
 
     fprintf(FD, YEL "SYNOPSIS:\n\n" RESET);
-    fprintf(FD, "    meon [command] [arguments]\n\n");
+    fprintf(FD, "    meon [command] [option] [arguments]\n\n");
     fprintf(FD, YEL "COMMANDS:\n\n" RESET);
     fprintf(FD, GRN "    -h, --help" RESET "\t\tShow Usage information like this.\n");
     fprintf(FD, GRN "    -v, --version" RESET "\tShow VM version information.\n");
-    fprintf(FD, GRN "    -c, --compile" RESET "\tCompile Meon to native executable. (beta).\n");
     fprintf(FD, GRN "    -r, --run" RESET "\t\tInterpret and evaluate Meon. (beta).\n");
+    fprintf(FD, "\n");
+    fprintf(FD, YEL "OPTIONS:\n\n" RESET);
+    fprintf(FD, GRN "    -d, --disassemble" RESET "\t\tRun interpreter and also show disassembled instructions.\n");
+    fprintf(FD, GRN "    -dd, --debug" RESET "\tRun interpreter and also show disassembled instructions and execution trace.\n");
     fprintf(FD, "\n");
     fprintf(FD, YEL "EXAMPLES:\n\n" RESET);
     fprintf(FD, GRN "    meon -r hello.meon" RESET "\tInterpret and evaluate 'hello.meon'.\n");
-    fprintf(FD, GRN "    meon -c hello.meon" RESET "\tCompile 'hello.meon' to native executable (beta).\n");
     fprintf(FD, "\n");
 #undef FD
     exit(exitStatus);
@@ -130,34 +132,61 @@ int main(int argc, char *argv[])
     {
         runFromREPL();
     }
-    else if (argc == 2)
+    else if (argc > 1 && argc < 5)
     {
-        const char *option = argv[1];
-        if (strcmp(option, "-h") == 0 || strcmp(option, "--help") == 0)
+        const char *command = argv[1];
+        if (strcmp(command, "-h") == 0 || strcmp(command, "--help") == 0)
         {
             showUsage(0);
         }
-        else if (strcmp(option, "-v") == 0 || strcmp(option, "--version") == 0)
+        else if (strcmp(command, "-v") == 0 || strcmp(command, "--version") == 0)
         {
             showInterpreterInfo(0, true);
         }
-        else
+        else if (strcmp(command, "-r") == 0 || strcmp(command, "--run") == 0)
         {
-            showUsage(1);
-        }
-    }
-    else if (argc == 3)
-    {
-        const char *option = argv[1];
-        const char *file = argv[2];
+            const char *option = argv[2];
+            if (option == NULL)
+                showUsage(1);
 
-        if (strcmp(option, "-r") == 0 || strcmp(option, "--run") == 0)
-        {
-            runFromFile(file);
-        }
-        else if (strcmp(option, "-c") == 0 || strcmp(option, "--compile") == 0)
-        {
-            printf(YEL "\nIt's under development. Please come back later.\n\n" RESET);
+            int debugLevel = 0;
+
+            if (strcmp(option, "-d") == 0 || strcmp(option, "--disassemble") == 0)
+            {
+                debugLevel = 1;
+                const char *file = argv[3];
+                if (file == NULL)
+                    showUsage(1);
+                runFromFile(file, debugLevel);
+            }
+            else if (strcmp(option, "-dd") == 0 || strcmp(option, "--debug") == 0)
+            {
+                debugLevel = 2;
+                const char *file = argv[3];
+                if (file == NULL)
+                    showUsage(1);
+                runFromFile(file, debugLevel);
+            }
+            else
+            {
+                const char *lateOption = argv[3];
+                if (lateOption != NULL)
+                {
+                    if (strcmp(lateOption, "-d") == 0 || strcmp(lateOption, "--disassemble") == 0)
+                    {
+                        debugLevel = 1;
+                    }
+                    else if (strcmp(lateOption, "-dd") == 0 || strcmp(lateOption, "--debug") == 0)
+                    {
+                        debugLevel = 2;
+                    }
+                    else
+                    {
+                        showUsage(1);
+                    }
+                }
+                runFromFile(option, debugLevel);
+            }
         }
         else
         {

@@ -1,9 +1,19 @@
-block 
-    let number a = 1 + 2;
-    let number b = 4 + 6;
-
-    output a + b;
-    a = 35;
-
+let string a = "global a";
+let string b = "global b";
+let string c = "global c";
+block
+    let string a = "outer a";
+    let string b = "outer b";
+    block
+        let string a = "inner a";
+        output a;
+        output b;
+        output c;
+    endblock
     output a;
+    output b;
+    output c;
 endblock
+output a;
+output b;
+output c;

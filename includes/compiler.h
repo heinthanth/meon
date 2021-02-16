@@ -4,6 +4,6 @@
 #include "vm.h"
 #include "object.h"
 
-bool compile(const char *source, const char *filename, Chunk *chunk);
+bool compile(const char *source, const char *filename, Chunk *chunk, int debugLeevl);
 
 #endif

@@ -10,6 +10,7 @@ void disassembleChunk(Chunk *chunk, const char *name)
     {
         offset = disassembleInstruction(chunk, offset);
     }
+    printf("\n");
 }
 
 static int constantInstruction(const char *name, Chunk *chunk, int offset)

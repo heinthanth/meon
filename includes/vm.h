@@ -28,7 +28,7 @@ extern VM vm;
 
 void initVM();
 void freeVM();
-InterpretResult interpret(const char *source, const char *filename);
+InterpretResult interpret(const char *source, const char *filename, int debugLevel);
 void push(Value value);
 Value pop();
 
