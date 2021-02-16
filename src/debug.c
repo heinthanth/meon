@@ -49,6 +49,14 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("true", offset);
     case OP_FALSE:
         return simpleInstruction("false", offset);
+    case OP_POP:
+        return simpleInstruction("pop", offset);
+    case OP_GET_GLOBAL:
+        return constantInstruction("gget", chunk, offset);
+    case OP_DEFINE_GLOBAL:
+        return constantInstruction("gdef", chunk, offset);
+    case OP_DEFINE_VAR_TYPE:
+        return constantInstruction("dvt", chunk, offset);
     case OP_EQUAL:
         return simpleInstruction("eq", offset);
     case OP_GREATER:
@@ -77,6 +85,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("not", offset);
     case OP_NEGATE:
         return simpleInstruction("neg", offset);
+    case OP_OUTPUT:
+        return simpleInstruction("output", offset);
     case OP_RETURN:
         return simpleInstruction("ret", offset);
     default:

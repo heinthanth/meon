@@ -1,2 +1,4 @@
-4 + 1 - 3 + 4
-"HELLO
+let number a = 3;
+let string b = "HELLO";
+
+output a . b;

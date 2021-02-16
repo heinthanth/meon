@@ -131,6 +131,18 @@ static token_t detectIdentifier()
 {
     switch (scanner.start[0])
     {
+    case 'b':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'o':
+                return detectReservedWord(2, 5, "olean", TOKEN_OUTPUT);
+            }
+        }
+        break;
+    }
     case 'f':
     {
         if (scanner.current - scanner.start > 1)
@@ -139,6 +151,54 @@ static token_t detectIdentifier()
             {
             case 'a':
                 return detectReservedWord(2, 3, "lse", TOKEN_TRUE);
+            }
+        }
+        break;
+    }
+    case 'l':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'e':
+                return detectReservedWord(2, 1, "t", TOKEN_LET);
+            }
+        }
+        break;
+    }
+    case 'n':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'u':
+                return detectReservedWord(2, 4, "mber", TOKEN_VT_NUMBER);
+            }
+        }
+        break;
+    }
+    case 'o':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'u':
+                return detectReservedWord(2, 4, "tput", TOKEN_OUTPUT);
+            }
+        }
+        break;
+    }
+    case 's':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 't':
+                return detectReservedWord(2, 4, "ring", TOKEN_VT_STRING);
             }
         }
         break;
@@ -258,8 +318,6 @@ static Token makeString()
     // The closing quote.
     advance();
     CONCAT_STRING(str, '"', strLength);
-
-    printf("strLength %d\n", strLength);
 
     Token token;
     token.t = TOKEN_STRING_LITERAL;

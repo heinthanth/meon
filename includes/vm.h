@@ -12,7 +12,7 @@ typedef struct
     Value *stack;
     int stackSize;
     int stackMaxSize;
-
+    Table globals;
     Table strings;
     Object *objects;
 } VM;

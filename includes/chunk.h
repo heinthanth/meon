@@ -9,6 +9,10 @@ typedef enum
     OP_CONSTANT,
     OP_TRUE,
     OP_FALSE,
+    OP_POP,
+    OP_GET_GLOBAL,
+    OP_DEFINE_VAR_TYPE,
+    OP_DEFINE_GLOBAL,
     OP_EQUAL,
     OP_GREATER,
     OP_GREATER_EQUAL,
@@ -23,6 +27,7 @@ typedef enum
     OP_EXPONENT,
     OP_NOT,
     OP_NEGATE,
+    OP_OUTPUT,
     OP_RETURN
 } OpCode;
 

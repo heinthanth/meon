@@ -9,6 +9,7 @@
 #include "mem.h"
 #include "vm.h"
 #include "compiler.h"
+#include "ansi-color.h"
 
 VM vm;
 
@@ -21,13 +22,14 @@ static void runtimeError(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
+    fprintf(stderr, YEL "\nRUNTIME_ERROR: " RESET RED);
     vfprintf(stderr, format, args);
     va_end(args);
-    fputs("\n", stderr);
+    fputs(RESET"\n\n", stderr);
 
     size_t instruction = vm.ip - vm.chunk->code - 1;
     int line = getLine(vm.chunk, instruction);
-    fprintf(stderr, "[line %d] in script\n", line);
+    fprintf(stderr, YEL "%4d |" RESET " %s\n\n", line, "Somewhere in this Line :P");
 
     resetStack();
 }
@@ -38,11 +40,13 @@ void initVM()
     vm.stackMaxSize = 0;
     resetStack();
     vm.objects = NULL;
+    initTable(&vm.globals);
     initTable(&vm.strings);
 }
 
 void freeVM()
 {
+    freeTable(&vm.globals);
     freeTable(&vm.strings);
     freeObjects();
 }
@@ -94,6 +98,7 @@ static InterpretResult run()
 {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 
 #define BINARY_OP(t, op)                                \
     do                                                  \
@@ -134,12 +139,49 @@ static InterpretResult run()
             push(constant);
             break;
         }
+        case OP_DEFINE_VAR_TYPE:
+        {
+            Value constant = READ_CONSTANT();
+            push(constant);
+            break;
+        }
         case OP_TRUE:
             push(BOOL_VAL(true));
             break;
         case OP_FALSE:
             push(BOOL_VAL(false));
             break;
+        case OP_POP:
+            pop();
+            break;
+        case OP_GET_GLOBAL:
+        {
+            ObjectString *name = READ_STRING();
+            Value value;
+            if (!tableGet(&vm.globals, name, &value))
+            {
+                runtimeError("Undefined variable '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            push(value);
+            break;
+        }
+        case OP_DEFINE_GLOBAL:
+        {
+            ObjectString *name = READ_STRING();
+            Value t = pop();
+            Value value = pop();
+            if (
+                (t.as.number == 24 && !IS_STRING(value)) ||
+                (t.as.number == 25 && !IS_NUMBER(value)) ||
+                (t.as.number == 26 && !IS_BOOL(value)))
+            {
+                runtimeError("Cannot assign value to variable with different type.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            tableSet(&vm.globals, name, peek(0));
+            break;
+        }
         case OP_EQUAL:
         {
             Value b = pop();
@@ -205,16 +247,24 @@ static InterpretResult run()
             }
             push(NUMBER_VAL(-AS_NUMBER(pop())));
             break;
-        case OP_RETURN:
+        case OP_OUTPUT:
         {
             printValue(pop());
-            printf("\n\n");
+            printf("\n");
+            break;
+        }
+        case OP_RETURN:
+        {
+            // printValue(pop());
+            // printf("\n\n");
             return INTERPRET_OK;
         }
         }
     }
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
+#undef BINARY_OP
 }
 
 InterpretResult interpret(const char *source, const char *filename)
