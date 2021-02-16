@@ -481,6 +481,7 @@ static void ifStatement()
     if (match(TOKEN_THEN))
     {
         statement();
+        patchJump(thenJump);
     }
     else
     {
@@ -488,51 +489,50 @@ static void ifStatement()
         {
             declaration();
         }
-    }
+        while (match(TOKEN_ELSEIF))
+        {
+            trueJump = GROW_ARRAY(int, trueJump, trueJumpSize, trueJumpSize + 1);
+            trueJump[trueJumpSize++] = emitJump(OP_JUMP);
 
-    while (match(TOKEN_ELSEIF))
-    {
+            patchJump(thenJump);
+            emit_b(OP_POP);
+
+            expect(TOKEN_LPAREN, "Expect '(' after 'if'.");
+            expression();
+            expect(TOKEN_RPAREN, "Expect ')' after condition.");
+
+            thenJump = emitJump(OP_JUMP_IF_FALSE);
+            emit_b(OP_POP);
+
+            while (!(check(TOKEN_ENDIF) || check(TOKEN_ELSE) || check(TOKEN_ELSEIF)) && !check(TOKEN_EOF))
+            {
+                declaration();
+            }
+        }
         trueJump = GROW_ARRAY(int, trueJump, trueJumpSize, trueJumpSize + 1);
         trueJump[trueJumpSize++] = emitJump(OP_JUMP);
 
         patchJump(thenJump);
         emit_b(OP_POP);
 
-        expect(TOKEN_LPAREN, "Expect '(' after 'if'.");
-        expression();
-        expect(TOKEN_RPAREN, "Expect ')' after condition.");
-
-        thenJump = emitJump(OP_JUMP_IF_FALSE);
-        emit_b(OP_POP);
-
-        while (!(check(TOKEN_ENDIF) || check(TOKEN_ELSE) || check(TOKEN_ELSEIF)) && !check(TOKEN_EOF))
+        if (match(TOKEN_ELSE))
         {
-            declaration();
+
+            while (!check(TOKEN_ENDIF) && !check(TOKEN_EOF))
+            {
+                declaration();
+            }
         }
-    }
-    trueJump = GROW_ARRAY(int, trueJump, trueJumpSize, trueJumpSize + 1);
-    trueJump[trueJumpSize++] = emitJump(OP_JUMP);
+        expect(TOKEN_ENDIF, "Expect 'endif' after 'if' statement.");
 
-    patchJump(thenJump);
-    emit_b(OP_POP);
-
-    if (match(TOKEN_ELSE))
-    {
-
-        while (!check(TOKEN_ENDIF) && !check(TOKEN_EOF))
+        for (int i = 0; i < trueJumpSize - 1; i++)
         {
-            declaration();
+            patchJump(trueJump[i]);
+            emit_b(OP_POP);
         }
+        patchJump(trueJump[trueJumpSize - 1]);
+        FREE_ARRAY(int, trueJump, trueJumpSize);
     }
-    expect(TOKEN_ENDIF, "Expect 'endif' after 'if' statement.");
-
-    for (int i = 0; i < trueJumpSize - 1; i++)
-    {
-        patchJump(trueJump[i]);
-        emit_b(OP_POP);
-    }
-    patchJump(trueJump[trueJumpSize - 1]);
-    FREE_ARRAY(int, trueJump, trueJumpSize);
 }
 
 static void printStatement()

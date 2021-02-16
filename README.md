@@ -3,7 +3,7 @@
 [![MIT license](https://img.shields.io/badge/License-MIT-green.svg)](https://lbesson.mit-license.org/)
 ![Lines of code](https://img.shields.io/tokei/lines/github/heinthanth/meon?label=Line%20of%20Code)
 
-`Meon VM` is the Virtual Machine for `Meon` programming language which has some unique syntax and is designed for beginner in Programming. `Meon VM` can either interpret `Meon` or compile to native executable. It is distributed under [MIT License](LICENSE).
+`Meon VM` is the Virtual Machine for `Meon` programming language which is general purpose language and designed for beginner in Programming. It is distributed under [MIT License](LICENSE).
 
 ## Documentations
 
@@ -38,7 +38,7 @@ Here are some FAQ about `Meon` project.
 -   WHY IT'S NAMED `Meon` ?
 
     -   it's from **Melon** and then, I removed **L**.
-    -   It's like `Neon`, `Xenon` and sounds sweet.
+    -   It's sounds like **Neon**, **Xenon** and the word itself is similar to favourite pet, cat's sound **Meow**.
 
 -   WHY THE FU\*K I CREATED THIS ?
     -   No reason! I just want to learn something new by creating something new.
