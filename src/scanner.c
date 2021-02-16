@@ -138,7 +138,7 @@ static token_t detectIdentifier()
             switch (scanner.start[1])
             {
             case 'o':
-                return detectReservedWord(2, 5, "olean", TOKEN_OUTPUT);
+                return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
             }
         }
         break;

@@ -1,4 +1,5 @@
 let number a = 3;
 let string b = "HELLO";
+let boolean c = "HELLO";
 
-output a . b;
+output a + b;
