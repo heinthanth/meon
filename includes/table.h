@@ -22,6 +22,7 @@ void freeTable(Table *table);
 bool tableGet(Table* table, ObjectString* k, Value* v);
 bool tableSet(Table *table, ObjectString *k, Value v);
 void tableAddAll(Table* from, Table* to);
+TableItem *findTableItem(TableItem *entries, int maxSize, ObjectString *k);
 ObjectString* tableFindString(Table* table, const char* chars, int length, uint32_t hash);
 bool tableDelete(Table* table, ObjectString* k);
 

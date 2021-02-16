@@ -21,7 +21,7 @@ void freeTable(Table *table)
     initTable(table);
 }
 
-static TableItem *findTableItem(TableItem *entries, int maxSize, ObjectString *k)
+TableItem *findTableItem(TableItem *entries, int maxSize, ObjectString *k)
 {
     uint32_t index = k->hash % maxSize;
     TableItem *tombstone = NULL;
@@ -140,8 +140,7 @@ void tableAddAll(Table *from, Table *to)
     }
 }
 
-ObjectString *tableFindString(Table *table, const char *chars,
-                           int length, uint32_t hash)
+ObjectString *tableFindString(Table *table, const char *chars, int length, uint32_t hash)
 {
     if (table->size == 0)
         return NULL;

@@ -13,6 +13,7 @@ typedef enum
     OP_GET_GLOBAL,
     OP_DEFINE_VAR_TYPE,
     OP_DEFINE_GLOBAL,
+    OP_SET_GLOBAL,
     OP_EQUAL,
     OP_GREATER,
     OP_GREATER_EQUAL,

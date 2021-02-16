@@ -57,6 +57,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return constantInstruction("gdef", chunk, offset);
     case OP_DEFINE_VAR_TYPE:
         return constantInstruction("dvt", chunk, offset);
+    case OP_SET_GLOBAL:
+        return constantInstruction("gset", chunk, offset);
     case OP_EQUAL:
         return simpleInstruction("eq", offset);
     case OP_GREATER:

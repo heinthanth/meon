@@ -25,7 +25,7 @@ static void runtimeError(const char *format, ...)
     fprintf(stderr, YEL "\nRUNTIME_ERROR: " RESET RED);
     vfprintf(stderr, format, args);
     va_end(args);
-    fputs(RESET"\n\n", stderr);
+    fputs(RESET "\n\n", stderr);
 
     size_t instruction = vm.ip - vm.chunk->code - 1;
     int line = getLine(vm.chunk, instruction);
@@ -182,6 +182,26 @@ static InterpretResult run()
             tableSet(&vm.globals, name, peek(0));
             break;
         }
+        case OP_SET_GLOBAL:
+        {
+            ObjectString *name = READ_STRING();
+            TableItem *old = findTableItem(vm.globals.items, vm.globals.maxSize, name);
+
+            if (old->k == NULL)
+            {
+                runtimeError("Undefined variable '%s'.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            Value v = pop();
+            if (old->v.t != v.t)
+            {
+                runtimeError("Cannot assign value to variable with different type.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            tableSet(&vm.globals, name, v);
+            break;
+        }
+
         case OP_EQUAL:
         {
             Value b = pop();

@@ -37,7 +37,8 @@ typedef enum
     PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)();
+typedef void (*ParseFn)(bool canAssign);
+
 typedef struct
 {
     ParseFn prefix;
@@ -210,7 +211,7 @@ static void defineVariable(uint8_t global, token_t variable_t)
     emit_bs(OP_DEFINE_GLOBAL, global);
 }
 
-static void binary()
+static void binary(bool canAssign)
 {
     // Remember the operator.
     token_t operator_t = parser.previous.t;
@@ -262,7 +263,7 @@ static void binary()
     }
 }
 
-static void literal()
+static void literal(bool canAssign)
 {
     switch (parser.previous.t)
     {
@@ -337,6 +338,7 @@ static void synchronize()
         switch (parser.current.t)
         {
         case TOKEN_OUTPUT:
+        case TOKEN_LET:
             return;
 
         default:
@@ -374,41 +376,49 @@ static void statement()
     }
 }
 
-static void grouping()
+static void grouping(bool canAssign)
 {
     expression();
     expect(TOKEN_RPAREN, "Expect ')' after expression.");
 }
 
-static void number()
+static void number(bool canAssign)
 {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
-static void string()
+static void string(bool canAssign)
 {
     emitConstant(OBJ_VAL(cpString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void namedVariable(Token name)
+static void namedVariable(Token name, bool canAssign)
 {
     uint8_t arg = identifierConstant(&name);
-    emit_bs(OP_GET_GLOBAL, arg);
+    if (canAssign && match(TOKEN_ASSIGN))
+    {
+        expression();
+        emit_bs(OP_SET_GLOBAL, arg);
+    }
+    else
+    {
+        emit_bs(OP_GET_GLOBAL, arg);
+    }
 }
 
-static void variable()
+static void variable(bool canAssign)
 {
-    namedVariable(parser.previous);
+    namedVariable(parser.previous, canAssign);
 }
 
-static void power()
+static void power(bool canAssign)
 {
     parsePrecedence(PREC_POWER);
     emit_b(OP_EXPONENT);
 }
 
-static void unary()
+static void unary(bool canAssign)
 {
     token_t opearator_t = parser.previous.t;
 
@@ -467,13 +477,19 @@ static void parsePrecedence(Precedence precedence)
         return;
     }
 
-    prefixRule();
+    bool canAssign = precedence <= PREC_ASSIGNMENT;
+    prefixRule(canAssign);
 
     while (precedence <= getRule(parser.current.t)->precedence)
     {
         advance();
         ParseFn infixRule = getRule(parser.previous.t)->infix;
-        infixRule();
+        infixRule(canAssign);
+    }
+
+    if (canAssign && match(TOKEN_ASSIGN))
+    {
+        error("Invalid assignment target.");
     }
 }
 
