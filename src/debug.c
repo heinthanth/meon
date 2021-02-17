@@ -120,6 +120,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return jumpInstruction("jif", 1, chunk, offset);
     case OP_LOOP:
         return jumpInstruction("loop", -1, chunk, offset);
+    case OP_CALL:
+      return bInstruction("call", chunk, offset);
     case OP_RETURN:
         return simpleInstruction("ret", offset);
     default:

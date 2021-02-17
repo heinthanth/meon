@@ -197,6 +197,7 @@ static void patchJump(int offset)
 
 static void emitReturn()
 {
+    emit_b(OP_NULL);
     emit_b(OP_RETURN);
 }
 
@@ -374,6 +375,25 @@ static void defineVariable(uint8_t global)
     emit_bs(OP_DEFINE_GLOBAL, global);
 }
 
+static uint8_t argumentList()
+{
+    uint8_t argCount = 0;
+    if (!check(TOKEN_RPAREN))
+    {
+        do
+        {
+            expression();
+            if (argCount == 255)
+            {
+                error("Can't have more than 255 arguments.");
+            }
+            argCount++;
+        } while (match(TOKEN_COMMA));
+    }
+    expect(TOKEN_RPAREN, "Expect ')' after arguments.");
+    return argCount;
+}
+
 static void logicAnd(bool canAssign)
 {
     int endJump = emitJump(OP_JUMP_IF_FALSE);
@@ -434,6 +454,12 @@ static void binary(bool canAssign)
     default:
         return; // Unreachable.
     }
+}
+
+static void call(bool canAssign)
+{
+    uint8_t argCount = argumentList();
+    emit_bs(OP_CALL, argCount);
 }
 
 static void literal(bool canAssign)
@@ -739,6 +765,24 @@ static void printStatement()
     emit_b(OP_OUTPUT);
 }
 
+static void returnStatement()
+{
+    if (current->t == TYPE_SCRIPT)
+    {
+        error("Can't return from outside of a function.");
+    }
+    if (match(TOKEN_SEMICOLON))
+    {
+        emitReturn();
+    }
+    else
+    {
+        expression();
+        expect(TOKEN_SEMICOLON, "Expect ';' after return value.");
+        emit_b(OP_RETURN);
+    }
+}
+
 static void whileStatement()
 {
     int loopStart = currentChunk()->size;
@@ -815,6 +859,10 @@ static void statement()
     if (match(TOKEN_OUTPUT))
     {
         printStatement();
+    }
+    else if (match(TOKEN_RETURN))
+    {
+        returnStatement();
     }
     else if (match(TOKEN_CONTINUE))
     {
@@ -937,7 +985,7 @@ static void unary(bool canAssign)
 }
 
 ParseRule rules[] = {
-    [TOKEN_LPAREN] = {grouping, NULL, PREC_NONE},
+    [TOKEN_LPAREN] = {grouping, call, PREC_CALL},
     [TOKEN_RPAREN] = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA] = {NULL, NULL, PREC_NONE},
     [TOKEN_DOT] = {NULL, binary, PREC_TERM},

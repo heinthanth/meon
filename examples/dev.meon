@@ -1,3 +1,17 @@
-let a = 3;
+func top()
+    return "top";
+endfunc
 
-output a;
+func foo()
+    return top();
+endfunc
+
+func bar()
+    return foo();
+endfunc
+
+func baz()
+    return bar();
+endfunc
+
+output baz();
