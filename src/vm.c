@@ -15,7 +15,7 @@ VM vm;
 
 static void resetStack()
 {
-    vm.stackSize = 0;
+    vm.stackTop = vm.stack;
 }
 
 static void runtimeError(const char *format, ...)
@@ -36,8 +36,6 @@ static void runtimeError(const char *format, ...)
 
 void initVM()
 {
-    vm.stack = NULL;
-    vm.stackMaxSize = 0;
     resetStack();
     vm.objects = NULL;
     initTable(&vm.globals);
@@ -53,25 +51,19 @@ void freeVM()
 
 void push(Value value)
 {
-    if (vm.stackMaxSize < vm.stackSize + 1)
-    {
-        int old = vm.stackMaxSize;
-        vm.stackMaxSize = GROW_ARRAY_SIZE(old);
-        vm.stack = GROW_ARRAY(Value, vm.stack, old, vm.stackMaxSize);
-    }
-    vm.stack[vm.stackSize] = value;
-    vm.stackSize++;
+    *vm.stackTop = value;
+    vm.stackTop++;
 }
 
 Value pop()
 {
-    vm.stackSize--;
-    return vm.stack[vm.stackSize];
+    vm.stackTop--;
+    return *vm.stackTop;
 }
 
 static Value peek(int distance)
 {
-    return vm.stack[distance];
+    return vm.stackTop[-1 - distance];
 }
 
 static bool isFalse(Value value)
@@ -124,10 +116,10 @@ static InterpretResult run(int debugLevel)
         if (debugLevel > 1)
         {
             printf("          ");
-            for (int i = 0; i < vm.stackSize; i++)
+            for (Value* slot = vm.stack; slot < vm.stackTop; slot++)
             {
                 printf("[ ");
-                printValue(vm.stack[i]);
+                printValue(*slot);
                 printf(" ]");
             }
             printf("\n");
@@ -135,8 +127,8 @@ static InterpretResult run(int debugLevel)
         }
         //#endif
 
-        uint8_t instruction;
-        switch (instruction = READ_BYTE())
+        uint8_t instruction = READ_BYTE();
+        switch (instruction)
         {
         case OP_CONSTANT:
         {
@@ -179,7 +171,7 @@ static InterpretResult run(int debugLevel)
         }
         case OP_DEFINE_LOCAL:
         {
-            Value t = READ_CONSTANT();
+            Value t = pop();
             if (
                 (t.as.number == 24 && !IS_STRING(peek(0))) ||
                 (t.as.number == 25 && !IS_NUMBER(peek(0))) ||
@@ -210,16 +202,12 @@ static InterpretResult run(int debugLevel)
         {
             uint8_t slot = READ_BYTE();
             Value old = vm.stack[slot];
-            // printf("\n\nnew value => ");
-            // //printf("%d", peek(1).t);
-            // printValue(peek(2));
-            // printf("\n\n");
-            if (old.t != peek(2).t)
+            if (old.t != peek(0).t)
             {
                 runtimeError("Cannot assign value to variable with different type.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            vm.stack[slot] = peek(2);
+            vm.stack[slot] = peek(0);
             break;
         }
         case OP_SET_GLOBAL:
@@ -232,13 +220,12 @@ static InterpretResult run(int debugLevel)
                 runtimeError("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
-            Value v = pop();
-            if (old->v.t != v.t)
+            if (old->v.t != peek(0).t)
             {
                 runtimeError("Cannot assign value to variable with different type.");
                 return INTERPRET_RUNTIME_ERROR;
             }
-            tableSet(&vm.globals, name, v);
+            tableSet(&vm.globals, name, peek(0));
             break;
         }
         case OP_EQUAL:
@@ -323,6 +310,12 @@ static InterpretResult run(int debugLevel)
         {
             uint16_t offset = READ_SHORT();
             vm.ip += offset;
+            break;
+        }
+        case OP_LOOP:
+        {
+            uint16_t offset = READ_SHORT();
+            vm.ip -= offset;
             break;
         }
         case OP_RETURN:

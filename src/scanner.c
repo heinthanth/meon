@@ -131,6 +131,18 @@ static token_t detectIdentifier()
 {
     switch (scanner.start[0])
     {
+    case 'a':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'n':
+                return detectReservedWord(2, 1, "d", TOKEN_AND);
+            }
+        }
+        break;
+    }
     case 'b':
     {
         if (scanner.current - scanner.start > 1)
@@ -141,6 +153,20 @@ static token_t detectIdentifier()
                 return detectReservedWord(2, 3, "ock", TOKEN_BLOCK);
             case 'o':
                 return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
+            case 'r':
+                return detectReservedWord(2, 3, "eak", TOKEN_BREAK);
+            }
+        }
+        break;
+    }
+    case 'c':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'o':
+                return detectReservedWord(2, 6, "ntinue", TOKEN_CONTINUE);
             }
         }
         break;
@@ -161,6 +187,10 @@ static token_t detectIdentifier()
                         return detectReservedWord(4, 4, "lock", TOKEN_ENDBLOCK);
                     case 'i':
                         return detectReservedWord(4, 1, "f", TOKEN_ENDIF);
+                    case 'f':
+                        return detectReservedWord(4, 2, "or", TOKEN_ENDFOR);
+                    case 'w':
+                        return detectReservedWord(4, 4, "hile", TOKEN_ENDWHILE);
                     }
                 }
             }
@@ -187,6 +217,8 @@ static token_t detectIdentifier()
             {
             case 'a':
                 return detectReservedWord(2, 3, "lse", TOKEN_FALSE);
+            case 'o':
+                return detectReservedWord(2, 1, "r", TOKEN_FOR);
             }
         }
         break;
@@ -237,6 +269,8 @@ static token_t detectIdentifier()
             {
             case 'u':
                 return detectReservedWord(2, 4, "tput", TOKEN_OUTPUT);
+            case 'r':
+                return TOKEN_OR;
             }
         }
         break;
@@ -261,6 +295,18 @@ static token_t detectIdentifier()
             {
             case 'r':
                 return detectReservedWord(2, 2, "ue", TOKEN_TRUE);
+            }
+        }
+        break;
+    }
+    case 'w':
+    {
+        if (scanner.current - scanner.start > 1)
+        {
+            switch (scanner.start[1])
+            {
+            case 'h':
+                return detectReservedWord(2, 3, "ile", TOKEN_WHILE);
             }
         }
         break;

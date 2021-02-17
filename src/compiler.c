@@ -156,6 +156,18 @@ static void emit_bs(uint8_t a, uint8_t b)
     emit_b(b);
 }
 
+static void emitLoop(int loopStart)
+{
+    emit_b(OP_LOOP);
+
+    int offset = currentChunk()->size - loopStart + 2;
+    if (offset > UINT16_MAX)
+        error("Loop body too large.");
+
+    emit_b((offset >> 8) & 0xff);
+    emit_b(offset & 0xff);
+}
+
 static int emitJump(uint8_t instruction)
 {
     emit_b(instruction);
@@ -341,11 +353,22 @@ static void defineVariable(uint8_t global, token_t variable_t)
     if (current->scopeDepth > 0)
     {
         markInitialized();
-        emit_bs(OP_DEFINE_LOCAL, makeConstant(NUMBER_VAL(variable_t)));
+        emit_bs(OP_DEFINE_VAR_TYPE, makeConstant(NUMBER_VAL(variable_t)));
+        emit_b(OP_DEFINE_LOCAL);
         return;
     }
     emit_bs(OP_DEFINE_VAR_TYPE, makeConstant(NUMBER_VAL(variable_t)));
     emit_bs(OP_DEFINE_GLOBAL, global);
+}
+
+static void logicAnd(bool canAssign)
+{
+    int endJump = emitJump(OP_JUMP_IF_FALSE);
+
+    emit_b(OP_POP);
+    parsePrecedence(PREC_AND);
+
+    patchJump(endJump);
 }
 
 static void binary(bool canAssign)
@@ -466,6 +489,135 @@ static void expressionStatement()
     emit_b(OP_POP);
 }
 
+int innermostLoopStart = -1;
+int breakJump = -1;
+int innermostLoopScopeDepth = 0;
+
+static void forStatement()
+{
+    beginScope();
+
+    expect(TOKEN_LPAREN, "Expect '(' after 'for'.");
+    if (match(TOKEN_LET))
+    {
+        varDeclaration();
+    }
+    else if (match(TOKEN_SEMICOLON))
+    {
+        // No initializer.
+    }
+    else
+    {
+        expressionStatement();
+    }
+
+    int surroundingLoopStart = innermostLoopStart;           // <--
+    int surroundingLoopScopeDepth = innermostLoopScopeDepth; // <--
+    int surroundingBreakJump = breakJump;
+
+    innermostLoopStart = currentChunk()->size;     // <--
+    innermostLoopScopeDepth = current->scopeDepth; // <--
+
+    int exitJump = -1;
+    if (!match(TOKEN_SEMICOLON))
+    {
+        expression();
+        expect(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+        // Jump out of the loop if the condition is false.
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emit_b(OP_POP); // Condition.
+    }
+
+    if (!match(TOKEN_RPAREN))
+    {
+        int bodyJump = emitJump(OP_JUMP);
+
+        int incrementStart = currentChunk()->size;
+        expression();
+        emit_b(OP_POP);
+        expect(TOKEN_RPAREN, "Expect ')' after for clauses.");
+
+        emitLoop(innermostLoopStart);        // <--
+        innermostLoopStart = incrementStart; // <--
+        patchJump(bodyJump);
+    }
+
+    if (match(TOKEN_THEN))
+    {
+        statement();
+    }
+    else
+    {
+        while (!check(TOKEN_ENDFOR) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+        expect(TOKEN_ENDFOR, "Expect 'endfor' after 'for' statement.");
+    }
+
+    emitLoop(innermostLoopStart); // <--
+
+    if (exitJump != -1)
+    {
+        patchJump(exitJump);
+        emit_b(OP_POP); // Condition.
+    }
+    if (breakJump != -1)
+    {
+        patchJump(breakJump);
+        emit_b(OP_POP); // Condition.
+    }
+
+    innermostLoopStart = surroundingLoopStart;           // <--
+    innermostLoopScopeDepth = surroundingLoopScopeDepth; // <--
+    breakJump = surroundingBreakJump;
+
+    endScope();
+}
+
+static void continueStatement()
+{
+    if (innermostLoopStart == -1)
+    {
+        error("Can't use 'continue' outside of a loop.");
+    }
+
+    expect(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+
+    // Discard any locals created inside the loop.
+    for (int i = current->localCount - 1;
+         i >= 0 && current->locals[i].depth > innermostLoopScopeDepth;
+         i--)
+    {
+        emit_b(OP_POP);
+    }
+
+    // Jump to top of current innermost loop.
+    emitLoop(innermostLoopStart);
+}
+
+static void breakStatement()
+{
+    if (innermostLoopStart == -1)
+    {
+        error("Cannot use 'break' outside of a loop.");
+        return;
+    }
+
+    expect(TOKEN_SEMICOLON, "Expected ';' after 'break'");
+
+    // Discard any locals created inside the loop.
+    for (int i = current->localCount - 1;
+         i >= 0 && current->locals[i].depth > innermostLoopScopeDepth;
+         i--)
+    {
+        emit_b(OP_POP);
+    }
+
+    breakJump = emitJump(OP_JUMP);
+}
+
 static void ifStatement()
 {
     int *trueJump = NULL;
@@ -542,6 +694,36 @@ static void printStatement()
     emit_b(OP_OUTPUT);
 }
 
+static void whileStatement()
+{
+    int loopStart = currentChunk()->size;
+
+    expect(TOKEN_LPAREN, "Expect '(' after 'while'.");
+    expression();
+    expect(TOKEN_RPAREN, "Expect ')' after condition.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+
+    emit_b(OP_POP);
+
+    if (match(TOKEN_THEN))
+    {
+        statement();
+    }
+    else
+    {
+        while (!check(TOKEN_ENDWHILE) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+        expect(TOKEN_ENDWHILE, "Expect 'endwhile' after 'while' statement.");
+    }
+
+    emitLoop(loopStart);
+    patchJump(exitJump);
+    emit_b(OP_POP);
+}
+
 static void synchronize()
 {
     parser.panicMode = false;
@@ -585,15 +767,31 @@ static void statement()
     {
         printStatement();
     }
+    else if (match(TOKEN_CONTINUE))
+    {
+        continueStatement();
+    }
+    else if (match(TOKEN_BREAK))
+    {
+        breakStatement();
+    }
+    else if (match(TOKEN_FOR))
+    {
+        forStatement();
+    }
+    else if (match(TOKEN_IF))
+    {
+        ifStatement();
+    }
+    else if (match(TOKEN_WHILE))
+    {
+        whileStatement();
+    }
     else if (match(TOKEN_BLOCK))
     {
         beginScope();
         block(TOKEN_ENDBLOCK);
         endScope();
-    }
-    else if (match(TOKEN_IF))
-    {
-        ifStatement();
     }
     else
     {
@@ -611,6 +809,18 @@ static void number(bool canAssign)
 {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
+}
+
+static void logicOr(bool canAssign)
+{
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    int endJump = emitJump(OP_JUMP);
+
+    patchJump(elseJump);
+    emit_b(OP_POP);
+
+    parsePrecedence(PREC_OR);
+    patchJump(endJump);
 }
 
 static void string(bool canAssign)
@@ -700,9 +910,23 @@ ParseRule rules[] = {
     [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
     [TOKEN_STRING_LITERAL] = {string, NULL, PREC_NONE},
     [TOKEN_NUMBER_LITERAL] = {number, NULL, PREC_NONE},
+    [TOKEN_VT_STRING] = {NULL, NULL, PREC_NONE},
+    [TOKEN_VT_NUMBER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_VT_BOOLEAN] = {NULL, NULL, PREC_NONE},
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
+    [TOKEN_AND] = {NULL, logicAnd, PREC_AND},
+    [TOKEN_OR] = {NULL, logicOr, PREC_OR},
     [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ERR] = {NULL, NULL, PREC_NONE},
+    [TOKEN_LET] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ELSE] = {NULL, NULL, PREC_NONE},
+    [TOKEN_THEN] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ELSEIF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ENDIF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_BLOCK] = {NULL, NULL, PREC_NONE},
+    [TOKEN_ENDBLOCK] = {NULL, NULL, PREC_NONE},
 };
 
 static void parsePrecedence(Precedence precedence)

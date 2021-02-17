@@ -9,9 +9,8 @@ typedef struct
 {
     Chunk *chunk;
     uint8_t *ip;
-    Value *stack;
-    int stackSize;
-    int stackMaxSize;
+    Value stack[256];
+    Value *stackTop;
     Table globals;
     Table strings;
     Object *objects;

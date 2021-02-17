@@ -77,7 +77,7 @@ int disassembleInstruction(Chunk *chunk, int offset)
     case OP_DEFINE_GLOBAL:
         return constantInstruction("gdef", chunk, offset);
     case OP_DEFINE_LOCAL:
-        return constantInstruction("ldef", chunk, offset);
+        return simpleInstruction("ldef", offset);
     case OP_DEFINE_VAR_TYPE:
         return constantInstruction("dvt", chunk, offset);
     case OP_SET_GLOBAL:
@@ -116,6 +116,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return jumpInstruction("jmp", 1, chunk, offset);
     case OP_JUMP_IF_FALSE:
         return jumpInstruction("jif", 1, chunk, offset);
+    case OP_LOOP:
+        return jumpInstruction("loop", -1, chunk, offset);
     case OP_RETURN:
         return simpleInstruction("ret", offset);
     default:

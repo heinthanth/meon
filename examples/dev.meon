@@ -1,1 +1,6 @@
-if (true) => output "HELLO";
+for(let number a = 0; a < 5; a = a + 1)
+    for(let number b = 0;  b < 5; b = b + 1)
+        output "[" . a . ", " . b . "]";
+        if(b == 3) => break;
+    endfor
+endfor
