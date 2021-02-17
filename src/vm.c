@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "common.h"
 #include "debug.h"
@@ -10,6 +11,7 @@
 #include "vm.h"
 #include "compiler.h"
 #include "ansi-color.h"
+#include "native.h"
 
 VM vm;
 
@@ -62,6 +64,8 @@ void initVM()
     vm.objects = NULL;
     initTable(&vm.globals);
     initTable(&vm.strings);
+
+    loadNativeFunction(&vm);
 }
 
 void freeVM()
@@ -118,6 +122,14 @@ static bool callValue(Value callee, int argCount)
         {
         case OBJECT_FUNCTION:
             return call(AS_FUNCTION(callee), argCount);
+        case OBJECT_NATIVE:
+        {
+            NativeFn native = AS_NATIVE(callee);
+            Value result = native(argCount, vm.stackTop - argCount);
+            vm.stackTop -= argCount + 1;
+            push(result);
+            return true;
+        }
         default:
             // Non-callable object type.
             break;

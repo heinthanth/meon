@@ -85,7 +85,17 @@ void printObject(Value value)
     case OBJECT_FUNCTION:
         printFunction(AS_FUNCTION(value));
         break;
+    case OBJECT_NATIVE:
+        printf("[ native func ]");
+        break;
     }
+}
+
+ObjectNative *newNative(NativeFn function)
+{
+    ObjectNative *native = ALLOCATE_OBJ(ObjectNative, OBJECT_NATIVE);
+    native->function = function;
+    return native;
 }
 
 ObjectString *takeString(char *chars, int length)
@@ -110,6 +120,23 @@ char *object2string(Value value)
         char *string = malloc(sizeof(char) * stringObj->length + 3);
         snprintf(string, stringObj->length + 3, "%s", stringObj->chars);
         return string;
+    }
+    case OBJECT_FUNCTION:
+    {
+        ObjectFunction *function = AS_FUNCTION(value);
+        if (function->name == NULL)
+        {
+            return "[ script ]";
+        }
+        char *string = malloc(sizeof(char) * function->name->length + 12);
+        snprintf(string, function->name->length + 12, "[ func %s ]", function->name->chars);
+        return string;
+    }
+    case OBJECT_NATIVE:
+    {
+        char *native = malloc(sizeof(char) * 12);
+        snprintf(native, 11, "%s", "[ script ]");
+        return native;
     }
     default:
     {

@@ -1,17 +1,17 @@
-func top()
-    return "top";
-endfunc
-
-func foo()
-    return top();
+func t()
+    return clock();
 endfunc
 
 func bar()
-    return foo();
+    return "RETURN FROM t => " . t();
 endfunc
 
 func baz()
     return bar();
 endfunc
 
-output baz();
+func quaz()
+    return bar();
+endfunc
+
+output quaz();
