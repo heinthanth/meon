@@ -66,6 +66,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return simpleInstruction("true", offset);
     case OP_FALSE:
         return simpleInstruction("false", offset);
+    case OP_NULL:
+        return simpleInstruction("nul", offset);
     case OP_POP:
         return simpleInstruction("pop", offset);
     case OP_GET_LOCAL:
@@ -76,8 +78,8 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return constantInstruction("gget", chunk, offset);
     case OP_DEFINE_GLOBAL:
         return constantInstruction("gdef", chunk, offset);
-    case OP_DEFINE_LOCAL:
-        return simpleInstruction("ldef", offset);
+    // case OP_DEFINE_LOCAL:
+    //     return simpleInstruction("ldef", offset);
     case OP_DEFINE_VAR_TYPE:
         return constantInstruction("dvt", chunk, offset);
     case OP_SET_GLOBAL:

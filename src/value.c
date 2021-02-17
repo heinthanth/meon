@@ -85,6 +85,8 @@ bool valuesEqual(Value a, Value b)
 
     switch (a.t)
     {
+    case VALUE_NULL:
+        return true;
     case VALUE_BOOLEAN:
         return AS_BOOL(a) == AS_BOOL(b);
     case VALUE_NUMBER:

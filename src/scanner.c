@@ -151,8 +151,8 @@ static token_t detectIdentifier()
             {
             case 'l':
                 return detectReservedWord(2, 3, "ock", TOKEN_BLOCK);
-            case 'o':
-                return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
+            // case 'o':
+            //     return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
             case 'r':
                 return detectReservedWord(2, 3, "eak", TOKEN_BREAK);
             }
@@ -188,7 +188,18 @@ static token_t detectIdentifier()
                     case 'i':
                         return detectReservedWord(4, 1, "f", TOKEN_ENDIF);
                     case 'f':
-                        return detectReservedWord(4, 2, "or", TOKEN_ENDFOR);
+                    {
+                        if (scanner.current - scanner.start > 4)
+                        {
+                            switch (scanner.start[4])
+                            {
+                            case 'o':
+                                return detectReservedWord(5, 1, "r", TOKEN_ENDFOR);
+                            case 'u':
+                                return detectReservedWord(5, 2, "nc", TOKEN_ENDFUNC);
+                            }
+                        }
+                    }
                     case 'w':
                         return detectReservedWord(4, 4, "hile", TOKEN_ENDWHILE);
                     }
@@ -219,6 +230,8 @@ static token_t detectIdentifier()
                 return detectReservedWord(2, 3, "lse", TOKEN_FALSE);
             case 'o':
                 return detectReservedWord(2, 1, "r", TOKEN_FOR);
+            case 'u':
+                return detectReservedWord(2, 2, "nc", TOKEN_FUNC);
             }
         }
         break;
@@ -231,8 +244,8 @@ static token_t detectIdentifier()
             {
             case 'f':
                 return TOKEN_IF;
-            case 'o':
-                return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
+            // case 'o':
+            //     return detectReservedWord(2, 5, "olean", TOKEN_VT_BOOLEAN);
             }
         }
         break;
@@ -256,7 +269,7 @@ static token_t detectIdentifier()
             switch (scanner.start[1])
             {
             case 'u':
-                return detectReservedWord(2, 4, "mber", TOKEN_VT_NUMBER);
+                return detectReservedWord(2, 2, "ll", TOKEN_NULL);
             }
         }
         break;
@@ -275,18 +288,18 @@ static token_t detectIdentifier()
         }
         break;
     }
-    case 's':
-    {
-        if (scanner.current - scanner.start > 1)
-        {
-            switch (scanner.start[1])
-            {
-            case 't':
-                return detectReservedWord(2, 4, "ring", TOKEN_VT_STRING);
-            }
-        }
-        break;
-    }
+    // case 's':
+    // {
+    //     if (scanner.current - scanner.start > 1)
+    //     {
+    //         switch (scanner.start[1])
+    //         {
+    //         case 't':
+    //             return detectReservedWord(2, 4, "ring", TOKEN_VT_STRING);
+    //         }
+    //     }
+    //     break;
+    // }
     case 't':
     {
         if (scanner.current - scanner.start > 1)

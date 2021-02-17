@@ -20,6 +20,16 @@ static Object *allocateObject(size_t size, object_t t)
     return object;
 }
 
+ObjectFunction *newFunction()
+{
+    ObjectFunction *function = ALLOCATE_OBJ(ObjectFunction, OBJECT_FUNCTION);
+
+    function->argsCount = 0;
+    function->name = NULL;
+    initChunk(&function->chunk);
+    return function;
+}
+
 static ObjectString *allocateString(char *chars, int length, uint32_t hash)
 {
     ObjectString *string = ALLOCATE_OBJ(ObjectString, OBJECT_STRING);
@@ -55,12 +65,25 @@ ObjectString *cpString(const char *chars, int length)
     return allocateString(heapChars, length, hash);
 }
 
+static void printFunction(ObjectFunction *function)
+{
+    if (function->name == NULL)
+    {
+        printf("[ script ]");
+        return;
+    }
+    printf("[ func %s ]", function->name->chars);
+}
+
 void printObject(Value value)
 {
     switch (OBJ_TYPE(value))
     {
     case OBJECT_STRING:
         printf("%s", AS_CSTRING(value));
+        break;
+    case OBJECT_FUNCTION:
+        printFunction(AS_FUNCTION(value));
         break;
     }
 }
@@ -88,8 +111,11 @@ char *object2string(Value value)
         snprintf(string, stringObj->length + 3, "%s", stringObj->chars);
         return string;
     }
+    default:
+    {
+        char *unknown = malloc(sizeof(char) * 9);
+        snprintf(unknown, 8, "%s", "unknown");
+        return unknown;
     }
-    char *unknown = malloc(sizeof(char) * 9);
-    snprintf(unknown, 8, "%s", "unknown");
-    return unknown;
+    }
 }

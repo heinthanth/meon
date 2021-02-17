@@ -16,6 +16,7 @@ VM vm;
 static void resetStack()
 {
     vm.stackTop = vm.stack;
+    vm.frameCount = 0;
 }
 
 static void runtimeError(const char *format, ...)
@@ -27,8 +28,9 @@ static void runtimeError(const char *format, ...)
     va_end(args);
     fputs(RESET "\n\n", stderr);
 
-    size_t instruction = vm.ip - vm.chunk->code - 1;
-    int line = getLine(vm.chunk, instruction);
+    CallFrame *frame = &vm.frames[vm.frameCount - 1];
+    size_t instruction = frame->ip - frame->function->chunk.code - 1;
+    int line = getLine(&frame->function->chunk, instruction);
     fprintf(stderr, YEL "%4d |" RESET " %s\n\n", line, "Somewhere in this Line :P");
 
     resetStack();
@@ -88,9 +90,11 @@ static void concatenate()
 
 static InterpretResult run(int debugLevel)
 {
-#define READ_BYTE() (*vm.ip++)
-#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define READ_SHORT() (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8) | vm.ip[-1]))
+    CallFrame *frame = &vm.frames[vm.frameCount - 1];
+
+#define READ_BYTE() (*frame->ip++)
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 
 #define BINARY_OP(t, op)                                \
@@ -116,14 +120,15 @@ static InterpretResult run(int debugLevel)
         if (debugLevel > 1)
         {
             printf("          ");
-            for (Value* slot = vm.stack; slot < vm.stackTop; slot++)
+            for (Value *slot = vm.stack; slot < vm.stackTop; slot++)
             {
                 printf("[ ");
                 printValue(*slot);
                 printf(" ]");
             }
             printf("\n");
-            disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
+            disassembleInstruction(&frame->function->chunk,
+                                   (int)(frame->ip - frame->function->chunk.code));
         }
         //#endif
 
@@ -148,13 +153,16 @@ static InterpretResult run(int debugLevel)
         case OP_FALSE:
             push(BOOL_VAL(false));
             break;
+        case OP_NULL:
+            push(NULL_VAL);
+            break;
         case OP_POP:
             pop();
             break;
         case OP_GET_LOCAL:
         {
             uint8_t slot = READ_BYTE();
-            push(vm.stack[slot]);
+            push(frame->slots[slot]);
             break;
         }
         case OP_GET_GLOBAL:
@@ -169,63 +177,56 @@ static InterpretResult run(int debugLevel)
             push(value);
             break;
         }
-        case OP_DEFINE_LOCAL:
-        {
-            Value t = pop();
-            if (
-                (t.as.number == 24 && !IS_STRING(peek(0))) ||
-                (t.as.number == 25 && !IS_NUMBER(peek(0))) ||
-                (t.as.number == 26 && !IS_BOOL(peek(0))))
-            {
-                runtimeError("Cannot assign value to variable with different type.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            break;
-        }
+        // case OP_DEFINE_LOCAL:
+        // {
+        //     Value t = pop();
+        //     if (
+        //         (t.as.number == 24 && !IS_STRING(peek(0))) ||
+        //         (t.as.number == 25 && !IS_NUMBER(peek(0))) ||
+        //         (t.as.number == 26 && !IS_BOOL(peek(0))))
+        //     {
+        //         runtimeError("Cannot assign value to variable with different type.");
+        //         return INTERPRET_RUNTIME_ERROR;
+        //     }
+        //     break;
+        // }
         case OP_DEFINE_GLOBAL:
         {
             ObjectString *name = READ_STRING();
-            Value t = pop();
+            //Value t = pop();
             Value value = pop();
-            if (
-                (t.as.number == 24 && !IS_STRING(value)) ||
-                (t.as.number == 25 && !IS_NUMBER(value)) ||
-                (t.as.number == 26 && !IS_BOOL(value)))
-            {
-                runtimeError("Cannot assign value to variable with different type.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
+            // if (
+            //     (t.as.number == 24 && !IS_STRING(value)) ||
+            //     (t.as.number == 25 && !IS_NUMBER(value)) ||
+            //     (t.as.number == 26 && !IS_BOOL(value)))
+            // {
+            //     runtimeError("Cannot assign value to variable with different type.");
+            //     return INTERPRET_RUNTIME_ERROR;
+            // }
             tableSet(&vm.globals, name, value);
             break;
         }
         case OP_SET_LOCAL:
         {
             uint8_t slot = READ_BYTE();
-            Value old = vm.stack[slot];
-            if (old.t != peek(0).t)
-            {
-                runtimeError("Cannot assign value to variable with different type.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            vm.stack[slot] = peek(0);
+            // Value old = frame->slots[slot];
+            // if (old.t != peek(0).t)
+            // {
+            //     runtimeError("Cannot assign value to variable with different type.");
+            //     return INTERPRET_RUNTIME_ERROR;
+            // }
+            frame->slots[slot] = peek(0);
             break;
         }
         case OP_SET_GLOBAL:
         {
             ObjectString *name = READ_STRING();
-            TableItem *old = findTableItem(vm.globals.items, vm.globals.maxSize, name);
-
-            if (old->k == NULL)
+            if (tableSet(&vm.globals, name, peek(0)))
             {
+                tableDelete(&vm.globals, name);
                 runtimeError("Undefined variable '%s'.", name->chars);
                 return INTERPRET_RUNTIME_ERROR;
             }
-            if (old->v.t != peek(0).t)
-            {
-                runtimeError("Cannot assign value to variable with different type.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            tableSet(&vm.globals, name, peek(0));
             break;
         }
         case OP_EQUAL:
@@ -303,19 +304,19 @@ static InterpretResult run(int debugLevel)
         {
             uint16_t offset = READ_SHORT();
             if (isFalse(peek(0)))
-                vm.ip += offset;
+                frame->ip += offset;
             break;
         }
         case OP_JUMP:
         {
             uint16_t offset = READ_SHORT();
-            vm.ip += offset;
+            frame->ip += offset;
             break;
         }
         case OP_LOOP:
         {
             uint16_t offset = READ_SHORT();
-            vm.ip -= offset;
+            frame->ip -= offset;
             break;
         }
         case OP_RETURN:
@@ -337,20 +338,15 @@ static InterpretResult run(int debugLevel)
 
 InterpretResult interpret(const char *source, const char *filename, int debugLevel)
 {
-    Chunk chunk;
-    initChunk(&chunk);
-
-    if (!compile(source, filename, &chunk, debugLevel))
-    {
-        freeChunk(&chunk);
+    ObjectFunction *function = compile(source, filename, debugLevel);
+    if (function == NULL)
         return INTERPRET_COMPILE_ERROR;
-    }
 
-    vm.chunk = &chunk;
-    vm.ip = vm.chunk->code;
+    push(OBJ_VAL(function));
+    CallFrame *frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stack;
 
-    InterpretResult result = run(debugLevel);
-
-    freeChunk(&chunk);
-    return result;
+    return run(debugLevel);
 }
