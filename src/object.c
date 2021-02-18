@@ -26,6 +26,7 @@ ObjectFunction *newFunction()
 
     function->argsCount = 0;
     function->name = NULL;
+    function->upvalueCount = 0;
     initChunk(&function->chunk);
     return function;
 }
@@ -65,6 +66,15 @@ ObjectString *cpString(const char *chars, int length)
     return allocateString(heapChars, length, hash);
 }
 
+ObjectUpvalue *newUpvalue(Value *slot)
+{
+    ObjectUpvalue *upvalue = ALLOCATE_OBJ(ObjectUpvalue, OBJECT_UPVALUE);
+    upvalue->closed = NULL_VAL;
+    upvalue->location = slot;
+    upvalue->next = NULL;
+    return upvalue;
+}
+
 static void printFunction(ObjectFunction *function)
 {
     if (function->name == NULL)
@@ -85,8 +95,14 @@ void printObject(Value value)
     case OBJECT_FUNCTION:
         printFunction(AS_FUNCTION(value));
         break;
+    case OBJECT_CLOSURE:
+        printFunction(AS_CLOSURE(value)->function);
+        break;
     case OBJECT_NATIVE:
         printf("[ native func ]");
+        break;
+    case OBJECT_UPVALUE:
+        printf("upvalue");
         break;
     }
 }
@@ -96,6 +112,21 @@ ObjectNative *newNative(NativeFn function)
     ObjectNative *native = ALLOCATE_OBJ(ObjectNative, OBJECT_NATIVE);
     native->function = function;
     return native;
+}
+
+ObjectClosure *newClosure(ObjectFunction *function)
+{
+    ObjectUpvalue **upvalues = ALLOCATE(ObjectUpvalue *, function->upvalueCount);
+    for (int i = 0; i < function->upvalueCount; i++)
+    {
+        upvalues[i] = NULL;
+    }
+
+    ObjectClosure *closure = ALLOCATE_OBJ(ObjectClosure, OBJECT_CLOSURE);
+    closure->function = function;
+    closure->upvalues = upvalues;
+    closure->upvalueCount = function->upvalueCount;
+    return closure;
 }
 
 ObjectString *takeString(char *chars, int length)
@@ -137,6 +168,24 @@ char *object2string(Value value)
         char *native = malloc(sizeof(char) * 12);
         snprintf(native, 11, "%s", "[ script ]");
         return native;
+    }
+    case OBJECT_CLOSURE:
+    {
+        ObjectFunction *function = AS_CLOSURE(value)->function;
+        if (function->name == NULL)
+        {
+            return "[ closure ]";
+        }
+        char *string = malloc(sizeof(char) * function->name->length + 12);
+        snprintf(string, function->name->length + 12, "[ func %s ]", function->name->chars);
+        return string;
+        break;
+    }
+    case OBJECT_UPVALUE:
+    {
+        char *up = malloc(sizeof(char) * 13);
+        snprintf(up, 12, "%s", "[ upvalue ]");
+        return up;
     }
     default:
     {

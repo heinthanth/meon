@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 
 void disassembleChunk(Chunk *chunk, const char *name)
@@ -84,6 +85,12 @@ int disassembleInstruction(Chunk *chunk, int offset)
         return constantInstruction("dvt", chunk, offset);
     case OP_SET_GLOBAL:
         return constantInstruction("gset", chunk, offset);
+    case OP_GET_UPVALUE:
+        return bInstruction("uvget", chunk, offset);
+    case OP_CLOSE_UPVALUE:
+      return simpleInstruction("uvclose", offset);
+    case OP_SET_UPVALUE:
+        return bInstruction("uvset", chunk, offset);
     case OP_EQUAL:
         return simpleInstruction("eq", offset);
     case OP_GREATER:
@@ -121,7 +128,26 @@ int disassembleInstruction(Chunk *chunk, int offset)
     case OP_LOOP:
         return jumpInstruction("loop", -1, chunk, offset);
     case OP_CALL:
-      return bInstruction("call", chunk, offset);
+        return bInstruction("call", chunk, offset);
+    case OP_CLOSURE:
+    {
+        offset++;
+        uint8_t constant = chunk->code[offset++];
+        printf("%-16s %4d ", "OP_CLOSURE", constant);
+        printValue(chunk->constants.values[constant]);
+        printf("\n");
+
+        ObjectFunction *function = AS_FUNCTION(chunk->constants.values[constant]);
+        for (int j = 0; j < function->upvalueCount; j++)
+        {
+            int isLocal = chunk->code[offset++];
+            int index = chunk->code[offset++];
+            printf("%04d      |                     %s %d\n",
+                   offset - 2, isLocal ? "local" : "upvalue", index);
+        }
+
+        return offset;
+    }
     case OP_RETURN:
         return simpleInstruction("ret", offset);
     default:

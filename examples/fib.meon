@@ -3,6 +3,6 @@ func fib(n)
     return fib(n - 2) + fib(n - 1);
 endfunc
 
-let start = time();
-output "ELAPSED TIME => " . fib(35);
-output time() - start;
+let start = clock();
+output "RESULT => " . fib(35);
+output "ELAPSED => " . (clock() - start) . "s";

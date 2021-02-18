@@ -24,5 +24,5 @@ static void defineNative(VM *vm, const char *name, NativeFn function)
 void loadNativeFunction(VM *vm)
 {
     defineNative(vm, "time", getUnixEpoch);
-    defineNative(vm, "clock", getUnixEpoch);
+    defineNative(vm, "clock", clockNative);
 }
