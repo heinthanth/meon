@@ -65,6 +65,11 @@ void initVM()
 {
     resetStack();
     vm.objects = NULL;
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
     initTable(&vm.globals);
     initTable(&vm.strings);
 
@@ -191,8 +196,8 @@ static bool isFalse(Value value)
 
 static void concatenate()
 {
-    char *b = value2string(pop());
-    char *a = value2string(pop());
+    char *b = value2string(peek(0));
+    char *a = value2string(peek(1));
 
     int length = (int)(strlen(a) + strlen(b));
     char *chars = ALLOCATE(char, length + 1);
@@ -201,6 +206,8 @@ static void concatenate()
 
     chars[length] = '\0';
     ObjectString *result = takeString(chars, length);
+    pop();
+    pop();
     push(OBJ_VAL(result));
 }
 
@@ -388,14 +395,31 @@ static InterpretResult run(int debugLevel)
             BINARY_OP(NUMBER_VAL, *);
             break;
         case OP_DIVIDE:
-            BINARY_OP(NUMBER_VAL, /);
+        {
+            do
+            {
+                double b = AS_NUMBER(pop());
+                double a = AS_NUMBER(pop());
+                if (b == 0)
+                {
+                    runtimeError("Divisor must not be 'zero'.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(NUMBER_VAL(a / b));
+            } while (false);
             break;
+        }
         case OP_MODULO:
         {
             do
             {
                 double b = AS_NUMBER(pop());
                 double a = AS_NUMBER(pop());
+                if (b == 0)
+                {
+                    runtimeError("Divisor must not be 'zero'.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 push(NUMBER_VAL((int)a % (int)b));
             } while (false);
             break;

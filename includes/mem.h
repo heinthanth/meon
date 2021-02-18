@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "object.h"
+#include "compiler.h"
 
 #define GROW_ARRAY_SIZE(maxSize) ((maxSize) < 8 ? 8 : (maxSize)*2)
 #define GROW_ARRAY(t, pointer, oldSize, newSize) \
@@ -14,6 +15,9 @@
 #define FREE(t, pointer) reallocate(pointer, sizeof(t), 0)
 
 void *reallocate(void *pointer, size_t oldSize, size_t newSize);
+void markValue(Value value);
+void markObject(Object* object);
+void collectGarbage();
 void freeObjects();
 
 #endif

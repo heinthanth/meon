@@ -31,6 +31,7 @@ struct Object
 {
     object_t t;
     struct Object *next;
+    bool isMarked;
 };
 
 typedef struct

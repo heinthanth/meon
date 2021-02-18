@@ -1188,3 +1188,13 @@ ObjectFunction *compile(const char *source, const char *filename, int debugLevel
     ObjectFunction *function = endCompiler(debugLevel);
     return parser.hadError ? NULL : function;
 }
+
+void markCompilerRoots()
+{
+    Compiler *compiler = current;
+    while (compiler != NULL)
+    {
+        markObject((Object *)compiler->function);
+        compiler = compiler->enclosing;
+    }
+}

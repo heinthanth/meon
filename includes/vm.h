@@ -10,7 +10,7 @@
 
 typedef struct
 {
-    ObjectClosure* closure;
+    ObjectClosure *closure;
     uint8_t *ip;
     Value *slots;
 } CallFrame;
@@ -23,8 +23,15 @@ typedef struct
     Value *stackTop;
     Table globals;
     Table strings;
-    ObjectUpvalue* openUpvalues;
+    ObjectUpvalue *openUpvalues;
+
+    size_t bytesAllocated;
+    size_t nextGC;
+
     Object *objects;
+    int grayCount;
+    int grayCapacity;
+    Object **grayStack;
 } VM;
 
 typedef enum

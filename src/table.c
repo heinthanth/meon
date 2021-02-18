@@ -111,6 +111,28 @@ bool tableSet(Table *table, ObjectString *k, Value v)
     return isNew;
 }
 
+void markTable(Table *table)
+{
+    for (int i = 0; i < table->maxSize; i++)
+    {
+        TableItem *entry = &table->items[i];
+        markObject((Object *)entry->k);
+        markValue(entry->v);
+    }
+}
+
+void tableRemoveWhite(Table *table)
+{
+    for (int i = 0; i < table->maxSize; i++)
+    {
+        TableItem *entry = &table->items[i];
+        if (entry->k != NULL && !entry->k->object.isMarked)
+        {
+            tableDelete(table, entry->k);
+        }
+    }
+}
+
 bool tableDelete(Table *table, ObjectString *k)
 {
     if (table->size == 0)
