@@ -5,6 +5,8 @@
 
 `Meon VM` is the Virtual Machine for `Meon` programming language which is general purpose language and designed for beginner in Programming. It is distributed under [MIT License](LICENSE).
 
+Well, I don't have enough knowledge and patience. So, I'll come back later. But it's almost finished.
+
 ## Documentations
 
 Right now, it's just under development. So, document is haven't written yet. But some example script that I used to test VM are located under [examples](examples/). However, I'll create a website for it!
