@@ -42,7 +42,7 @@ void printValue(Value value)
         break;
     case VALUE_NUMBER:
     {
-        printf("%g", AS_NUMBER(value));
+        printf("%.0f", AS_NUMBER(value));
         break;
     }
     case VALUE_OBJECT:
@@ -63,9 +63,9 @@ char *value2string(Value value)
     else if (IS_NUMBER(value))
     {
         double number = AS_NUMBER(value);
-        int numberStringLength = snprintf(NULL, 0, "%.15g", number) + 1;
+        int numberStringLength = snprintf(NULL, 0, "%.0f", number) + 1;
         char *numberString = malloc(sizeof(char) * numberStringLength);
-        snprintf(numberString, numberStringLength, "%.15g", number);
+        snprintf(numberString, numberStringLength, "%.0f", number);
         return numberString;
     }
     else if (IS_OBJ(value))
@@ -92,10 +92,8 @@ bool valuesEqual(Value a, Value b)
     case VALUE_NUMBER:
         return AS_NUMBER(a) == AS_NUMBER(b);
     case VALUE_OBJECT:
-    {
         return AS_OBJ(a) == AS_OBJ(b);
     default:
         return false; // Unreachable.
-    }
     }
 }

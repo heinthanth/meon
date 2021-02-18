@@ -1,0 +1,12 @@
+let a = 0;
+
+while(a < 5)
+    if(a == 3) => break;
+    output a;
+    a = a + 1;
+endwhile
+
+for(let i = 0; i < 5; i = i + 1)
+    if(i == 3) => continue;
+    output i;
+endfor

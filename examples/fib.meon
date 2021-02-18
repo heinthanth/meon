@@ -4,5 +4,5 @@ func fib(n)
 endfunc
 
 let start = time();
-output fib(35);
+output "ELAPSED TIME => " . fib(35);
 output time() - start;

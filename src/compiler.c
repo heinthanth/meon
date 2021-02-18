@@ -647,6 +647,50 @@ static void forStatement()
     endScope();
 }
 
+static void whileStatement()
+{
+    int surroundingLoopStart = innermostLoopStart;           // <--
+    int surroundingLoopScopeDepth = innermostLoopScopeDepth; // <--
+    int surroundingBreakJump = breakJump;
+
+    innermostLoopStart = currentChunk()->size;
+    innermostLoopScopeDepth = current->scopeDepth;
+
+    expect(TOKEN_LPAREN, "Expect '(' after 'while'.");
+    expression();
+    expect(TOKEN_RPAREN, "Expect ')' after condition.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emit_b(OP_POP);
+
+    if (match(TOKEN_THEN))
+    {
+        statement();
+    }
+    else
+    {
+        while (!check(TOKEN_ENDWHILE) && !check(TOKEN_EOF))
+        {
+            declaration();
+        }
+        expect(TOKEN_ENDWHILE, "Expect 'endwhile' after 'while' statement.");
+    }
+
+    emitLoop(innermostLoopStart);
+    patchJump(exitJump);
+    emit_b(OP_POP);
+
+    if (breakJump != -1)
+    {
+        patchJump(breakJump);
+        //emit_b(OP_POP); // Condition.
+    }
+
+    innermostLoopStart = surroundingLoopStart;           // <--
+    innermostLoopScopeDepth = surroundingLoopScopeDepth; // <--
+    breakJump = surroundingBreakJump;
+}
+
 static void continueStatement()
 {
     if (innermostLoopStart == -1)
@@ -705,6 +749,7 @@ static void ifStatement()
     {
         statement();
         patchJump(thenJump);
+        emit_b(OP_POP);
     }
     else
     {
@@ -781,36 +826,6 @@ static void returnStatement()
         expect(TOKEN_SEMICOLON, "Expect ';' after return value.");
         emit_b(OP_RETURN);
     }
-}
-
-static void whileStatement()
-{
-    int loopStart = currentChunk()->size;
-
-    expect(TOKEN_LPAREN, "Expect '(' after 'while'.");
-    expression();
-    expect(TOKEN_RPAREN, "Expect ')' after condition.");
-
-    int exitJump = emitJump(OP_JUMP_IF_FALSE);
-
-    emit_b(OP_POP);
-
-    if (match(TOKEN_THEN))
-    {
-        statement();
-    }
-    else
-    {
-        while (!check(TOKEN_ENDWHILE) && !check(TOKEN_EOF))
-        {
-            declaration();
-        }
-        expect(TOKEN_ENDWHILE, "Expect 'endwhile' after 'while' statement.");
-    }
-
-    emitLoop(loopStart);
-    patchJump(exitJump);
-    emit_b(OP_POP);
 }
 
 static void synchronize()
